@@ -1,209 +1,240 @@
 import express from "express";
 import path from "path";
 import { createServer as createViteServer } from "vite";
-import { dbStore } from "./src/server/store.ts";
+import { repository } from "./src/server/repository.ts";
 import { generateVexaInsights, analyzeTransaction, chatWithVexa } from "./src/server/ai.ts";
 
 async function startServer() {
   const app = express();
   const PORT = 3000;
 
-  // Middlewares
   app.use(express.json());
 
-  // Log requests in dev
   app.use((req, res, next) => {
     console.log(`[VEXA SERVER] ${req.method} ${req.url}`);
     next();
   });
 
-  // API Routes (FIRST before Vite)
+  // --- Health ---
   app.get("/api/health", (req, res) => {
     res.json({ status: "ok", app: "VEXA AI Command Center", timestamp: new Date().toISOString() });
   });
 
-  // Get overview and business profile
-  app.get("/api/metrics", (req, res) => {
+  // --- Metrics & Profile ---
+  app.get("/api/metrics", async (req, res) => {
     try {
-      const metrics = dbStore.getOverviewMetrics();
-      res.json({
-        metrics,
-        profile: dbStore.profile
-      });
-    } catch (e: any) {
-      res.status(500).json({ error: e.message });
-    }
+      const [metrics, profile] = await Promise.all([repository.getMetrics(), repository.getProfile()]);
+      res.json({ metrics, profile });
+    } catch (e: any) { res.status(500).json({ error: e.message }); }
   });
 
-  // Update profile
-  app.post("/api/profile", (req, res) => {
-    try {
-      const updated = dbStore.updateProfile(req.body);
-      res.json(updated);
-    } catch (e: any) {
-      res.status(500).json({ error: e.message });
-    }
+  app.get("/api/profile", async (req, res) => {
+    try { res.json(await repository.getProfile()); }
+    catch (e: any) { res.status(500).json({ error: e.message }); }
   });
 
-  // Get transactions list
-  app.get("/api/transactions", (req, res) => {
-    try {
-      res.json(dbStore.transactions);
-    } catch (e: any) {
-      res.status(500).json({ error: e.message });
-    }
+  app.post("/api/profile", async (req, res) => {
+    try { res.json(await repository.updateProfile(req.body)); }
+    catch (e: any) { res.status(500).json({ error: e.message }); }
   });
 
-  // Add transaction (supports real-time AI analysis)
+  // --- Transactions ---
+  app.get("/api/transactions", async (req, res) => {
+    try { res.json(await repository.getTransactions()); }
+    catch (e: any) { res.status(500).json({ error: e.message }); }
+  });
+
   app.post("/api/transactions", async (req, res) => {
     try {
       const { merchant, category, amount, type, status, date } = req.body;
       if (!merchant || !category || amount === undefined || !type) {
         return res.status(400).json({ error: "Missing required fields" });
       }
-
-      const transaction = dbStore.addTransaction({
-        merchant,
-        category,
-        amount: Number(amount),
-        type,
-        status: status || 'cleared',
-        date: date || new Date().toISOString().split('T')[0]
+      const transaction = await repository.addTransaction({
+        merchant, category, amount: Number(amount), type,
+        status: status || "cleared",
+        date: date || new Date().toISOString().split("T")[0],
       });
-
-      // Analyze transaction with VEXA AI asynchronously or inline
       const analysis = await analyzeTransaction(transaction);
       transaction.aiAnalysis = analysis;
-
       res.status(201).json(transaction);
-    } catch (e: any) {
-      res.status(500).json({ error: e.message });
-    }
+    } catch (e: any) { res.status(500).json({ error: e.message }); }
   });
 
-  // Get invoices list
-  app.get("/api/invoices", (req, res) => {
-    try {
-      res.json(dbStore.invoices);
-    } catch (e: any) {
-      res.status(500).json({ error: e.message });
-    }
+  // --- Invoices ---
+  app.get("/api/invoices", async (req, res) => {
+    try { res.json(await repository.getInvoices()); }
+    catch (e: any) { res.status(500).json({ error: e.message }); }
   });
 
-  // Add invoice
-  app.post("/api/invoices", (req, res) => {
+  app.post("/api/invoices", async (req, res) => {
     try {
       const { client, amount, dueDate } = req.body;
       if (!client || !amount || !dueDate) {
         return res.status(400).json({ error: "Missing client, amount, or dueDate" });
       }
-
-      const count = dbStore.invoices.length + 101;
-      const invoiceNumber = `INV-2026-${count}`;
-
-      const invoice = dbStore.addInvoice({
-        invoiceNumber,
-        client,
-        amount: Number(amount),
-        dueDate,
-        status: 'pending',
-        createdDate: new Date().toISOString().split('T')[0]
+      const invoice = await repository.addInvoice({
+        invoiceNumber: `INV-2026-${Date.now().toString().slice(-3)}`,
+        client, amount: Number(amount), dueDate,
+        status: "pending",
+        createdDate: new Date().toISOString().split("T")[0],
       });
-
       res.status(201).json(invoice);
-    } catch (e: any) {
-      res.status(500).json({ error: e.message });
-    }
+    } catch (e: any) { res.status(500).json({ error: e.message }); }
   });
 
-  // Update invoice status
-  app.post("/api/invoices/:id/status", (req, res) => {
+  app.post("/api/invoices/:id/status", async (req, res) => {
     try {
-      const { id } = req.params;
       const { status } = req.body;
-      if (!status || !['paid', 'pending', 'overdue'].includes(status)) {
+      if (!["paid", "pending", "overdue"].includes(status)) {
         return res.status(400).json({ error: "Invalid status" });
       }
-
-      const invoice = dbStore.updateInvoiceStatus(id, status);
-      if (!invoice) {
-        return res.status(404).json({ error: "Invoice not found" });
-      }
-
+      const invoice = await repository.updateInvoiceStatus(req.params.id, status);
       res.json(invoice);
-    } catch (e: any) {
-      res.status(500).json({ error: e.message });
-    }
+    } catch (e: any) { res.status(404).json({ error: e.message }); }
   });
 
-  // Get clients
-  app.get("/api/clients", (req, res) => {
-    try {
-      res.json(dbStore.clients);
-    } catch (e: any) {
-      res.status(500).json({ error: e.message });
-    }
+  // --- Clients / Customers ---
+  app.get("/api/clients", async (req, res) => {
+    try { res.json(await repository.getClients()); }
+    catch (e: any) { res.status(500).json({ error: e.message }); }
   });
 
-  // Add client
-  app.post("/api/clients", (req, res) => {
+  app.post("/api/clients", async (req, res) => {
     try {
-      const { name, email, status } = req.body;
-      if (!name || !email) {
-        return res.status(400).json({ error: "Missing name or email" });
-      }
-
-      const client = dbStore.addClient({
-        name,
-        email,
-        status: status || 'active'
-      });
-
+      const { name, email, phone, status } = req.body;
+      if (!name || !email) return res.status(400).json({ error: "Missing name or email" });
+      const client = await repository.addClient({ name, email, phone, status: status || "active" });
       res.status(201).json(client);
-    } catch (e: any) {
-      res.status(500).json({ error: e.message });
-    }
+    } catch (e: any) { res.status(500).json({ error: e.message }); }
   });
 
-  // Get dynamic generative insights using Gemini
-  app.get("/api/insights", async (req, res) => {
+  // --- Products / Inventory ---
+  app.get("/api/products", async (req, res) => {
+    try { res.json(await repository.getProducts()); }
+    catch (e: any) { res.status(500).json({ error: e.message }); }
+  });
+
+  app.post("/api/products", async (req, res) => {
     try {
-      const insights = await generateVexaInsights();
-      res.json(insights);
-    } catch (e: any) {
-      res.status(500).json({ error: e.message });
-    }
+      const { name, sku, category, price, cost, stock, reorderLevel, unit } = req.body;
+      if (!name || !sku || price === undefined) return res.status(400).json({ error: "Missing required fields" });
+      const product = await repository.addProduct({
+        name, sku, category, price: Number(price), cost: Number(cost || 0),
+        stock: Number(stock || 0), reorderLevel: Number(reorderLevel || 10), unit: unit || "pcs",
+      });
+      res.status(201).json(product);
+    } catch (e: any) { res.status(500).json({ error: e.message }); }
   });
 
-  // Live interactive chatbot consultation
+  app.patch("/api/products/:id", async (req, res) => {
+    try { res.json(await repository.updateProduct(req.params.id, req.body)); }
+    catch (e: any) { res.status(404).json({ error: e.message }); }
+  });
+
+  // --- Sales ---
+  app.get("/api/sales", async (req, res) => {
+    try { res.json(await repository.getSales()); }
+    catch (e: any) { res.status(500).json({ error: e.message }); }
+  });
+
+  app.post("/api/sales", async (req, res) => {
+    try {
+      const sale = await repository.addSale(req.body);
+      res.status(201).json(sale);
+    } catch (e: any) { res.status(500).json({ error: e.message }); }
+  });
+
+  // --- Expenses ---
+  app.get("/api/expenses", async (req, res) => {
+    try { res.json(await repository.getExpenses()); }
+    catch (e: any) { res.status(500).json({ error: e.message }); }
+  });
+
+  app.post("/api/expenses", async (req, res) => {
+    try {
+      const expense = await repository.addExpense(req.body);
+      res.status(201).json(expense);
+    } catch (e: any) { res.status(500).json({ error: e.message }); }
+  });
+
+  // --- Suppliers ---
+  app.get("/api/suppliers", async (req, res) => {
+    try { res.json(await repository.getSuppliers()); }
+    catch (e: any) { res.status(500).json({ error: e.message }); }
+  });
+
+  app.post("/api/suppliers", async (req, res) => {
+    try {
+      const { name, contactPerson, email, phone, category, status } = req.body;
+      if (!name || !email) return res.status(400).json({ error: "Missing name or email" });
+      const supplier = await repository.addSupplier({
+        name, contactPerson, email, phone, category,
+        status: status || "active",
+      });
+      res.status(201).json(supplier);
+    } catch (e: any) { res.status(500).json({ error: e.message }); }
+  });
+
+  // --- Partners ---
+  app.get("/api/partners", async (req, res) => {
+    try { res.json(await repository.getPartners()); }
+    catch (e: any) { res.status(500).json({ error: e.message }); }
+  });
+
+  app.post("/api/partners", async (req, res) => {
+    try {
+      const { name, role, equity, contribution, email, phone, status } = req.body;
+      if (!name || !role) return res.status(400).json({ error: "Missing name or role" });
+      const partner = await repository.addPartner({
+        name, role, equity: Number(equity || 0), contribution: Number(contribution || 0),
+        email, phone, status: status || "active",
+      });
+      res.status(201).json(partner);
+    } catch (e: any) { res.status(500).json({ error: e.message }); }
+  });
+
+  // --- Notifications ---
+  app.get("/api/notifications", async (req, res) => {
+    try { res.json(await repository.getNotifications()); }
+    catch (e: any) { res.status(500).json({ error: e.message }); }
+  });
+
+  app.post("/api/notifications/:id/read", async (req, res) => {
+    try { await repository.markNotificationRead(req.params.id); res.json({ success: true }); }
+    catch (e: any) { res.status(500).json({ error: e.message }); }
+  });
+
+  // --- Timeline ---
+  app.get("/api/timeline", async (req, res) => {
+    try { res.json(await repository.getTimeline()); }
+    catch (e: any) { res.status(500).json({ error: e.message }); }
+  });
+
+  // --- AI ---
+  app.get("/api/insights", async (req, res) => {
+    try { res.json(await generateVexaInsights()); }
+    catch (e: any) { res.status(500).json({ error: e.message }); }
+  });
+
   app.post("/api/chat", async (req, res) => {
     try {
       const { message, history } = req.body;
-      if (!message) {
-        return res.status(400).json({ error: "Missing message query" });
-      }
-
+      if (!message) return res.status(400).json({ error: "Missing message" });
       const reply = await chatWithVexa(message, history || []);
       res.json({ reply });
-    } catch (e: any) {
-      res.status(500).json({ error: e.message });
-    }
+    } catch (e: any) { res.status(500).json({ error: e.message }); }
   });
 
-  // Mount Vite middleware in development (when process.env.NODE_ENV !== "production")
+  // --- Vite / Static ---
   if (process.env.NODE_ENV !== "production") {
-    const vite = await createViteServer({
-      server: { middlewareMode: true },
-      appType: "spa",
-    });
+    const vite = await createViteServer({ server: { middlewareMode: true }, appType: "spa" });
     app.use(vite.middlewares);
     console.log("[VEXA] Mounted Vite dev middleware");
   } else {
-    const distPath = path.join(process.cwd(), 'dist');
+    const distPath = path.join(process.cwd(), "dist");
     app.use(express.static(distPath));
-    app.get('*', (req, res) => {
-      res.sendFile(path.join(distPath, 'index.html'));
-    });
+    app.get("*", (req, res) => { res.sendFile(path.join(distPath, "index.html")); });
     console.log("[VEXA] Serving compiled production client");
   }
 
@@ -212,6 +243,4 @@ async function startServer() {
   });
 }
 
-startServer().catch(err => {
-  console.error("Failed to start VEXA server:", err);
-});
+startServer().catch(err => { console.error("Failed to start VEXA server:", err); });

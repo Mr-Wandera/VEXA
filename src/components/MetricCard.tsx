@@ -1,5 +1,5 @@
 import { motion } from "motion/react";
-import { LucideIcon } from "lucide-react";
+import { Video as LucideIcon } from "lucide-react";
 
 interface MetricCardProps {
   title: string;
@@ -19,7 +19,7 @@ export default function MetricCard({
   subtext,
   trend,
   icon: Icon,
-  glowColor = "rgba(147, 51, 234, 0.15)"
+  glowColor = "rgba(16, 185, 129, 0.12)"
 }: MetricCardProps) {
   return (
     <motion.div

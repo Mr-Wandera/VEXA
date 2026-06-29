@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { X, Sparkles, AlertCircle, PlusCircle, Check } from "lucide-react";
+import { X, Sparkles, CircleAlert as AlertCircle, CirclePlus as PlusCircle, Check } from "lucide-react";
 
 interface AddTransactionModalProps {
   isOpen: boolean;
@@ -94,7 +94,7 @@ export default function AddTransactionModal({
             {/* Header */}
             <div className="flex items-center justify-between border-b border-neutral-800 pb-4.5">
               <div className="flex items-center gap-2">
-                <PlusCircle className="h-5 w-5 text-indigo-400" />
+                <PlusCircle className="h-5 w-5 text-primary-400" />
                 <h3 className="font-display text-base font-semibold text-white tracking-wide">
                   Record Ledger Transaction
                 </h3>
@@ -119,9 +119,9 @@ export default function AddTransactionModal({
                     <Check className="h-8 w-8" />
                   </motion.div>
                 ) : (
-                  <div className="relative mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+                  <div className="relative mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-primary-500/10 text-primary-400 border border-primary-500/20">
                     <Sparkles className="h-7 w-7 animate-pulse" />
-                    <span className="absolute inset-0 rounded-full border border-indigo-500/40 animate-ping opacity-25" />
+                    <span className="absolute inset-0 rounded-full border border-primary-500/40 animate-ping opacity-25" />
                   </div>
                 )}
                 <h4 className="font-display text-sm font-semibold text-white">
@@ -173,7 +173,7 @@ export default function AddTransactionModal({
                       placeholder="0.00"
                       value={amount}
                       onChange={(e) => setAmount(e.target.value)}
-                      className="w-full rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-3 text-sm text-white focus:outline-none focus:border-indigo-500 transition font-mono"
+                      className="w-full rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-3 text-sm text-white focus:outline-none focus:border-primary-500 transition font-mono"
                     />
                   </div>
 
@@ -185,7 +185,7 @@ export default function AddTransactionModal({
                       type="date"
                       value={date}
                       onChange={(e) => setDate(e.target.value)}
-                      className="w-full rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-3 text-sm text-white focus:outline-none focus:border-indigo-500 transition font-mono"
+                      className="w-full rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-3 text-sm text-white focus:outline-none focus:border-primary-500 transition font-mono"
                     />
                   </div>
                 </div>
@@ -199,7 +199,7 @@ export default function AddTransactionModal({
                     placeholder="e.g. AWS Infrastructure, Vercel Hosting, Linear Corp"
                     value={merchant}
                     onChange={(e) => setMerchant(e.target.value)}
-                    className="w-full rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-3 text-sm text-white focus:outline-none focus:border-indigo-500 transition font-sans"
+                    className="w-full rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-3 text-sm text-white focus:outline-none focus:border-primary-500 transition font-sans"
                   />
                 </div>
 
@@ -210,7 +210,7 @@ export default function AddTransactionModal({
                     <select
                       value={category}
                       onChange={(e) => setCategory(e.target.value)}
-                      className="w-full rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-3 text-sm text-white focus:outline-none focus:border-indigo-500 transition font-sans"
+                      className="w-full rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-3 text-sm text-white focus:outline-none focus:border-primary-500 transition font-sans"
                     >
                       {CATEGORIES[type].map((cat, idx) => (
                         <option key={idx} value={cat}>{cat}</option>
@@ -224,7 +224,7 @@ export default function AddTransactionModal({
                     <select
                       value={status}
                       onChange={(e) => setStatus(e.target.value as any)}
-                      className="w-full rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-3 text-sm text-white focus:outline-none focus:border-indigo-500 transition font-sans"
+                      className="w-full rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-3 text-sm text-white focus:outline-none focus:border-primary-500 transition font-sans"
                     >
                       <option value="cleared">Cleared (Instantly Settled)</option>
                       <option value="pending">Pending Authorization</option>
@@ -242,7 +242,7 @@ export default function AddTransactionModal({
                   </button>
                   <button
                     type="submit"
-                    className="rounded-xl bg-indigo-600 px-5 py-3 text-xs font-semibold text-white hover:bg-indigo-500 transition flex items-center gap-1.5 shadow-lg shadow-indigo-600/10"
+                    className="rounded-xl bg-primary-600 px-5 py-3 text-xs font-semibold text-white hover:bg-primary-500 transition flex items-center gap-1.5 shadow-lg shadow-primary-600/10"
                   >
                     <Sparkles className="h-3.5 w-3.5" />
                     Record Transaction
