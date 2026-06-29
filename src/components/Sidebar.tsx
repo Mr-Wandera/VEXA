@@ -89,7 +89,7 @@ export default function Sidebar({ open, onClose, notificationCount }: SidebarPro
                         transition={{ type: "spring", stiffness: 400, damping: 30 }}
                       />
                     )}
-                    <Icon className={`h-4.5 w-4.5 ${isActive ? "text-primary-400" : ""}`} />
+                    <Icon className={`h-4 w-4 ${isActive ? "text-primary-400" : ""}`} />
                     <span>{item.label}</span>
                     {item.badge && notificationCount > 0 && (
                       <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-error-500/20 px-1.5 text-xs font-semibold text-error-400">

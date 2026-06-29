@@ -1,13 +1,19 @@
 import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "motion/react";
-import { Users, Plus, X, Mail, Phone, DollarSign, UserPlus, Building } from "lucide-react";
+import { motion } from "motion/react";
+import { Users, Plus, Mail, Phone, DollarSign, UserPlus } from "lucide-react";
 import { apiClient } from "../lib/apiClient";
 import { Client } from "../types";
 import StatCard from "../components/ui/StatCard";
+import { useToast } from "../components/ui/Toast";
+import ErrorState from "../components/ui/ErrorState";
+import Modal from "../components/ui/Modal";
+import PageHeader from "../components/ui/PageHeader";
 
 export default function CustomersPage() {
+  const { show } = useToast();
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [showAdd, setShowAdd] = useState(false);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -17,8 +23,13 @@ export default function CustomersPage() {
   useEffect(() => { loadData(); }, []);
 
   const loadData = async () => {
-    try { setClients(await apiClient.getClients()); }
-    catch (err) { console.error(err); }
+    try {
+      setError(null);
+      setClients(await apiClient.getClients());
+    } catch (err) {
+      console.error(err);
+      setError("Failed to load customers. Please try again.");
+    }
     finally { setLoading(false); }
   };
 
@@ -30,7 +41,11 @@ export default function CustomersPage() {
       setClients((prev) => [c, ...prev]);
       setName(""); setEmail(""); setPhone("");
       setShowAdd(false);
-    } catch (err) { console.error(err); }
+      show("Customer created successfully", "success");
+    } catch (err) {
+      console.error(err);
+      show("Failed to create. Please try again.", "error");
+    }
     finally { setSubmitting(false); }
   };
 
@@ -42,17 +57,17 @@ export default function CustomersPage() {
     return <div className="space-y-6"><div className="h-8 w-32 rounded-lg shimmer" /><div className="grid grid-cols-1 gap-4 sm:grid-cols-3">{Array.from({ length: 3 }).map((_, i) => <div key={i} className="h-28 rounded-2xl shimmer" />)}</div></div>;
   }
 
+  if (error) {
+    return <ErrorState message={error} onRetry={loadData} />;
+  }
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="font-display text-2xl font-bold tracking-tight text-white">Customers</h1>
-          <p className="text-sm text-neutral-400">Manage your customer relationships.</p>
-        </div>
-        <button onClick={() => setShowAdd(true)} className="flex items-center gap-1.5 rounded-xl bg-primary-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-primary-600/20 transition hover:bg-primary-500">
-          <Plus className="h-4 w-4" /><span className="hidden sm:inline">Add Customer</span>
-        </button>
-      </div>
+      <PageHeader
+        title="Customers"
+        subtitle="Manage your customer relationships."
+        action={{ label: "Add Customer", icon: Plus, onClick: () => setShowAdd(true) }}
+      />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <StatCard title="Total Customers" value={clients.length} icon={Users} accent="primary" />
@@ -105,37 +120,26 @@ export default function CustomersPage() {
         ))}
       </div>
 
-      <AnimatePresence>
-        {showAdd && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowAdd(false)} className="absolute inset-0 bg-neutral-950/80 backdrop-blur-md" />
-            <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} className="relative w-full max-w-md rounded-2xl border border-neutral-800 bg-neutral-900/90 p-6 shadow-2xl backdrop-blur-2xl">
-              <div className="flex items-center justify-between border-b border-neutral-800 pb-4">
-                <h3 className="font-display text-base font-semibold text-white">Add New Customer</h3>
-                <button onClick={() => setShowAdd(false)} className="rounded-lg border border-neutral-800 bg-neutral-950 p-1.5 text-neutral-400 hover:text-white transition"><X className="h-4 w-4" /></button>
-              </div>
-              <form onSubmit={handleAdd} className="mt-5 space-y-4">
-                <div>
-                  <label className="block text-xs font-medium text-neutral-400 mb-1.5">Full Name</label>
-                  <input required type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Brian Kamau" className="w-full rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-3 text-sm text-white focus:border-primary-500 focus:outline-none" />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-neutral-400 mb-1.5">Email</label>
-                  <input required type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="brian@example.com" className="w-full rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-3 text-sm text-white focus:border-primary-500 focus:outline-none" />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-neutral-400 mb-1.5">Phone (optional)</label>
-                  <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+254 700 000 000" className="w-full rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-3 text-sm text-white focus:border-primary-500 focus:outline-none" />
-                </div>
-                <div className="flex justify-end gap-3 border-t border-neutral-800 pt-5">
-                  <button type="button" onClick={() => setShowAdd(false)} className="rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-2.5 text-xs font-semibold text-neutral-400 hover:text-white transition">Cancel</button>
-                  <button type="submit" disabled={submitting} className="rounded-xl bg-primary-600 px-5 py-2.5 text-xs font-semibold text-white hover:bg-primary-500 transition disabled:opacity-50">{submitting ? "Adding..." : "Add Customer"}</button>
-                </div>
-              </form>
-            </motion.div>
+      <Modal isOpen={showAdd} onClose={() => setShowAdd(false)} title="Add New Customer">
+        <form onSubmit={handleAdd} className="space-y-4">
+          <div>
+            <label className="block text-xs font-medium text-neutral-400 mb-1.5">Full Name</label>
+            <input required type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Brian Kamau" className="w-full rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-3 text-sm text-white focus:border-primary-500 focus:outline-none" />
           </div>
-        )}
-      </AnimatePresence>
+          <div>
+            <label className="block text-xs font-medium text-neutral-400 mb-1.5">Email</label>
+            <input required type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="brian@example.com" className="w-full rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-3 text-sm text-white focus:border-primary-500 focus:outline-none" />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-neutral-400 mb-1.5">Phone (optional)</label>
+            <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+254 700 000 000" className="w-full rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-3 text-sm text-white focus:border-primary-500 focus:outline-none" />
+          </div>
+          <div className="flex justify-end gap-3 border-t border-neutral-800 pt-5">
+            <button type="button" onClick={() => setShowAdd(false)} className="rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-2.5 text-xs font-semibold text-neutral-400 hover:text-white transition">Cancel</button>
+            <button type="submit" disabled={submitting} className="rounded-xl bg-primary-600 px-5 py-2.5 text-xs font-semibold text-white hover:bg-primary-500 transition disabled:opacity-50">{submitting ? "Adding..." : "Add Customer"}</button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 }

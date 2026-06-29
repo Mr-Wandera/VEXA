@@ -1,29 +1,45 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, lazy, Suspense } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Sparkles, Menu, X } from "lucide-react";
+import { Sparkles } from "lucide-react";
 import { RouterProvider, useRouter, matchRoute } from "./lib/router";
+import { ToastProvider } from "./components/ui/Toast";
 import Sidebar from "./components/Sidebar";
 import Header from "./components/Header";
 import PageTransition from "./components/ui/PageTransition";
 import AddTransactionModal from "./components/AddTransactionModal";
 import VexaChatBot from "./components/VexaChatBot";
+import { apiClient } from "./lib/apiClient";
 
-// Pages
+// Eager-load landing + auth (critical path), lazy-load the rest
 import LandingPage from "./pages/LandingPage";
 import AuthPage from "./pages/AuthPage";
-import DashboardPage from "./pages/DashboardPage";
-import SalesPage from "./pages/SalesPage";
-import InventoryPage from "./pages/InventoryPage";
-import ExpensesPage from "./pages/ExpensesPage";
-import InvoiceManager from "./components/InvoiceManager";
-import CustomersPage from "./pages/CustomersPage";
-import SuppliersPage from "./pages/SuppliersPage";
-import PartnersPage from "./pages/PartnersPage";
-import ReportsPage from "./pages/ReportsPage";
-import NotificationsPage from "./pages/NotificationsPage";
-import TimelinePage from "./pages/TimelinePage";
-import SettingsPage from "./pages/SettingsPage";
-import AIPage from "./pages/AIPage";
+
+const DashboardPage = lazy(() => import("./pages/DashboardPage"));
+const SalesPage = lazy(() => import("./pages/SalesPage"));
+const InventoryPage = lazy(() => import("./pages/InventoryPage"));
+const ExpensesPage = lazy(() => import("./pages/ExpensesPage"));
+const InvoiceManager = lazy(() => import("./components/InvoiceManager"));
+const CustomersPage = lazy(() => import("./pages/CustomersPage"));
+const SuppliersPage = lazy(() => import("./pages/SuppliersPage"));
+const PartnersPage = lazy(() => import("./pages/PartnersPage"));
+const ReportsPage = lazy(() => import("./pages/ReportsPage"));
+const NotificationsPage = lazy(() => import("./pages/NotificationsPage"));
+const TimelinePage = lazy(() => import("./pages/TimelinePage"));
+const SettingsPage = lazy(() => import("./pages/SettingsPage"));
+const AIPage = lazy(() => import("./pages/AIPage"));
+
+function PageLoader() {
+  return (
+    <div className="space-y-6">
+      <div className="h-8 w-48 rounded-lg shimmer" />
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="h-32 rounded-2xl shimmer" />
+        ))}
+      </div>
+    </div>
+  );
+}
 
 function AppContent() {
   const { path } = useRouter();
@@ -31,27 +47,33 @@ function AppContent() {
   const [quickAddOpen, setQuickAddOpen] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
   const [chatQuery, setChatQuery] = useState("");
-  const [notificationCount, setNotificationCount] = useState(3);
-  const [businessName, setBusinessName] = useState("Aesthetic Lab LLC");
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [notificationCount, setNotificationCount] = useState(0);
+  const [businessName, setBusinessName] = useState("Your Business");
 
-  // Check auth state on mount
+  // Fetch notification count and business name on mount
   useEffect(() => {
-    const authed = sessionStorage.getItem("vexa_auth") === "true";
-    if (authed) setIsAuthenticated(true);
-  }, []);
+    const loadHeaderData = async () => {
+      try {
+        const [notifs, { profile }] = await Promise.all([
+          apiClient.getNotifications(),
+          apiClient.getMetrics(),
+        ]);
+        setNotificationCount(notifs.filter((n) => !n.read).length);
+        setBusinessName(profile.name);
+      } catch (err) {
+        console.error("Failed to load header data:", err);
+      }
+    };
+    if (path.startsWith("/app")) loadHeaderData();
+  }, [path.startsWith("/app")]);
 
-  // Determine if we're in the app (authenticated) or on a public page
-  const isAppRoute = path.startsWith("/app");
   const isLanding = path === "/" || path === "";
   const isAuth = path === "/auth";
 
-  // Public routes (landing, auth)
   if (isLanding) return <LandingPage />;
-  if (isAuth) return <AuthPage onAuthed={() => setIsAuthenticated(true)} />;
+  if (isAuth) return <AuthPage onAuthed={() => {}} />;
 
-  // App routes — require auth (but we allow viewing in dev without auth for demo)
-  if (isAppRoute) {
+  if (path.startsWith("/app")) {
     return (
       <div className="min-h-screen bg-neutral-950 text-neutral-200">
         <div className="grid-bg pointer-events-none fixed inset-0 opacity-40" />
@@ -67,20 +89,17 @@ function AppContent() {
             <main className="mx-auto max-w-7xl px-4 py-6 lg:px-8 lg:py-8">
               <AnimatePresence mode="wait">
                 <PageTransition key={path}>
-                  {renderAppPage(path, {
-                    setChatOpen,
-                    setChatQuery,
-                  })}
+                  <Suspense fallback={<PageLoader />}>
+                    {renderAppPage(path, { setChatOpen, setChatQuery })}
+                  </Suspense>
                 </PageTransition>
               </AnimatePresence>
             </main>
           </div>
         </div>
 
-        {/* Quick Add Modal */}
         <AddTransactionModal isOpen={quickAddOpen} onClose={() => setQuickAddOpen(false)} onAdd={async () => {}} />
 
-        {/* AI Chat slide-over */}
         <AnimatePresence>
           {chatOpen && (
             <motion.div
@@ -97,7 +116,6 @@ function AppContent() {
     );
   }
 
-  // Fallback
   return <LandingPage />;
 }
 
@@ -121,12 +139,12 @@ function renderAppPage(
   return <DashboardPage onAskAI={() => {}} />;
 }
 
-// Wrapper to provide InvoiceManager with data
-
 export default function App() {
   return (
     <RouterProvider>
-      <AppContent />
+      <ToastProvider>
+        <AppContent />
+      </ToastProvider>
     </RouterProvider>
   );
 }

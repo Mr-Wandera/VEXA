@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Sparkles, Mail, Lock, User, ArrowRight, ArrowLeft, Check } from "lucide-react";
+import { Sparkles, Mail, Lock, User, ArrowRight, ArrowLeft, Check, Eye, EyeOff } from "lucide-react";
 import { useRouter } from "../lib/router";
+import { useToast } from "../components/ui/Toast";
 
 interface AuthPageProps {
   onAuthed: () => void;
@@ -9,31 +10,41 @@ interface AuthPageProps {
 
 export default function AuthPage({ onAuthed }: AuthPageProps) {
   const { navigate } = useRouter();
+  const { show } = useToast();
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    setLoading(true);
-
-    // Phase 1: simulated auth. Phase 2 will use Supabase auth.
-    // The auth contract is abstracted — swapping providers requires no UI changes.
-    await new Promise((r) => setTimeout(r, 800));
 
     if (!email || !password) {
       setError("Please enter your email and password.");
-      setLoading(false);
       return;
     }
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters.");
+      return;
+    }
+
+    setLoading(true);
+    await new Promise((r) => setTimeout(r, 600));
 
     sessionStorage.setItem("vexa_auth", "true");
     sessionStorage.setItem("vexa_user", JSON.stringify({ email, name: name || email.split("@")[0] }));
     setLoading(false);
+    onAuthed();
+    show(mode === "signin" ? "Welcome back!" : "Account created successfully!", "success");
+    navigate("/app/dashboard");
+  };
+
+  const handleSkip = () => {
+    sessionStorage.setItem("vexa_auth", "true");
     onAuthed();
     navigate("/app/dashboard");
   };
@@ -101,7 +112,7 @@ export default function AuthPage({ onAuthed }: AuthPageProps) {
               : "Start your 30-day free trial. No credit card required."}
           </p>
 
-          <form onSubmit={handleSubmit} className="mt-8 space-y-4">
+          <form onSubmit={handleSubmit} className="mt-8 space-y-4" autoComplete="on">
             <AnimatePresence mode="wait">
               {mode === "signup" && (
                 <motion.div
@@ -110,15 +121,17 @@ export default function AuthPage({ onAuthed }: AuthPageProps) {
                   exit={{ opacity: 0, height: 0 }}
                   className="overflow-hidden"
                 >
-                  <label className="block text-xs font-medium text-neutral-400 mb-1.5">Full name</label>
+                  <label htmlFor="name" className="block text-xs font-medium text-neutral-400 mb-1.5">Full name</label>
                   <div className="relative">
                     <User className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-500" />
                     <input
+                      id="name"
                       type="text"
+                      autoComplete="name"
                       value={name}
                       onChange={(e) => setName(e.target.value)}
                       placeholder="Brian Kamau"
-                      className="w-full rounded-xl border border-neutral-800 bg-neutral-900/50 py-3 pl-11 pr-4 text-sm text-white placeholder-neutral-600 transition focus:border-primary-500 focus:outline-none"
+                      className="auth-input w-full rounded-xl border border-neutral-800 bg-neutral-900/50 py-3 pl-11 pr-4 text-sm text-white placeholder-neutral-600 transition focus:border-primary-500 focus:outline-none"
                     />
                   </div>
                 </motion.div>
@@ -126,36 +139,56 @@ export default function AuthPage({ onAuthed }: AuthPageProps) {
             </AnimatePresence>
 
             <div>
-              <label className="block text-xs font-medium text-neutral-400 mb-1.5">Email address</label>
+              <label htmlFor="email" className="block text-xs font-medium text-neutral-400 mb-1.5">Email address</label>
               <div className="relative">
                 <Mail className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-500" />
                 <input
+                  id="email"
                   type="email"
                   required
+                  autoComplete="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="you@business.com"
-                  className="w-full rounded-xl border border-neutral-800 bg-neutral-900/50 py-3 pl-11 pr-4 text-sm text-white placeholder-neutral-600 transition focus:border-primary-500 focus:outline-none"
+                  className="auth-input w-full rounded-xl border border-neutral-800 bg-neutral-900/50 py-3 pl-11 pr-4 text-sm text-white placeholder-neutral-600 transition focus:border-primary-500 focus:outline-none"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-neutral-400 mb-1.5">Password</label>
+              <label htmlFor="password" className="block text-xs font-medium text-neutral-400 mb-1.5">Password</label>
               <div className="relative">
                 <Lock className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-500" />
                 <input
-                  type="password"
+                  id="password"
+                  type={showPassword ? "text" : "password"}
                   required
+                  autoComplete={mode === "signin" ? "current-password" : "new-password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full rounded-xl border border-neutral-800 bg-neutral-900/50 py-3 pl-11 pr-4 text-sm text-white placeholder-neutral-600 transition focus:border-primary-500 focus:outline-none"
+                  className="auth-input w-full rounded-xl border border-neutral-800 bg-neutral-900/50 py-3 pl-11 pr-11 text-sm text-white placeholder-neutral-600 transition focus:border-primary-500 focus:outline-none"
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-white transition"
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
               </div>
             </div>
 
-            {error && <p className="text-sm text-error-400">{error}</p>}
+            {error && (
+              <motion.p
+                initial={{ opacity: 0, y: -5 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex items-center gap-1.5 text-sm text-error-400"
+              >
+                {error}
+              </motion.p>
+            )}
 
             <button
               type="submit"
@@ -176,7 +209,7 @@ export default function AuthPage({ onAuthed }: AuthPageProps) {
           <p className="mt-6 text-center text-sm text-neutral-400">
             {mode === "signin" ? "Don't have an account? " : "Already have an account? "}
             <button
-              onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
+              onClick={() => { setMode(mode === "signin" ? "signup" : "signin"); setError(""); }}
               className="font-semibold text-primary-400 hover:text-primary-300 transition"
             >
               {mode === "signin" ? "Sign up" : "Sign in"}
@@ -185,11 +218,7 @@ export default function AuthPage({ onAuthed }: AuthPageProps) {
 
           <div className="mt-6 text-center">
             <button
-              onClick={() => {
-                sessionStorage.setItem("vexa_auth", "true");
-                onAuthed();
-                navigate("/app/dashboard");
-              }}
+              onClick={handleSkip}
               className="text-xs text-neutral-500 hover:text-neutral-300 transition"
             >
               Skip and explore the demo →

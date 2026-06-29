@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
 import { motion } from "motion/react";
-import { Wallet, TrendingUp, TrendingDown, DollarSign, Package, Users, CircleAlert as AlertCircle, Sparkles, ArrowRight, CircleCheck as CheckCircle, Clock } from "lucide-react";
+import { Wallet, TrendingUp, TrendingDown, DollarSign, Package, Users, CircleAlert as AlertCircle, Sparkles, Clock } from "lucide-react";
 import { apiClient } from "../lib/apiClient";
 import { DashboardMetrics, BusinessProfile, VexaInsight } from "../types";
 import StatCard from "../components/ui/StatCard";
 import TrendChart from "../components/TrendChart";
 import VexaInsightsPanel from "../components/VexaInsightsPanel";
+import ErrorState from "../components/ui/ErrorState";
 
 interface DashboardPageProps {
   onAskAI: (query: string) => void;
@@ -17,12 +18,14 @@ export default function DashboardPage({ onAskAI }: DashboardPageProps) {
   const [insights, setInsights] = useState<VexaInsight[]>([]);
   const [insightsLoading, setInsightsLoading] = useState(true);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
     loadData();
   }, []);
 
   const loadData = async () => {
+    setError(false);
     try {
       const { metrics, profile } = await apiClient.getMetrics();
       setMetrics(metrics);
@@ -31,6 +34,7 @@ export default function DashboardPage({ onAskAI }: DashboardPageProps) {
       setInsights(ins);
     } catch (err) {
       console.error("Failed to load dashboard:", err);
+      setError(true);
     } finally {
       setLoading(false);
       setInsightsLoading(false);
@@ -62,6 +66,8 @@ export default function DashboardPage({ onAskAI }: DashboardPageProps) {
       </div>
     );
   }
+
+  if (error) return <ErrorState message="Failed to load dashboard data." onRetry={loadData} />;
 
   const currency = profile?.currency || "KSh";
 

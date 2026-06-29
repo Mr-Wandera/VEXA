@@ -45,7 +45,7 @@ export default function Header({ onMenuClick, onQuickAdd, notificationCount, bus
             onClick={() => navigate("/app/notifications")}
             className="relative rounded-xl border border-neutral-800 bg-neutral-900/50 p-2.5 text-neutral-400 transition hover:text-white"
           >
-            <Bell className="h-4.5 w-4.5" />
+            <Bell className="h-4 w-4" />
             {notificationCount > 0 && (
               <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-error-500 px-1 text-[10px] font-bold text-white">
                 {notificationCount}

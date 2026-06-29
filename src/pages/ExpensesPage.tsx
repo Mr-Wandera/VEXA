@@ -1,9 +1,13 @@
 import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "motion/react";
-import { Receipt, Plus, X, TrendingDown, DollarSign, Calendar } from "lucide-react";
+import { motion } from "motion/react";
+import { Receipt, Plus, TrendingDown, DollarSign } from "lucide-react";
 import { apiClient } from "../lib/apiClient";
 import { Expense } from "../types";
 import StatCard from "../components/ui/StatCard";
+import { useToast } from "../components/ui/Toast";
+import ErrorState from "../components/ui/ErrorState";
+import Modal from "../components/ui/Modal";
+import PageHeader from "../components/ui/PageHeader";
 
 const CATEGORIES = [
   "SaaS Infrastructure", "Cloud Servers", "Developer Tools", "Design Software",
@@ -12,8 +16,10 @@ const CATEGORIES = [
 ];
 
 export default function ExpensesPage() {
+  const { show } = useToast();
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [showAdd, setShowAdd] = useState(false);
 
   // Form
@@ -29,9 +35,13 @@ export default function ExpensesPage() {
 
   const loadData = async () => {
     try {
+      setError(null);
       const e = await apiClient.getExpenses();
       setExpenses(e);
-    } catch (err) { console.error(err); }
+    } catch (err) {
+      console.error(err);
+      setError("Failed to load expenses. Please try again.");
+    }
     finally { setLoading(false); }
   };
 
@@ -46,7 +56,11 @@ export default function ExpensesPage() {
       setExpenses((prev) => [exp, ...prev]);
       setDescription(""); setAmount(""); setVendor("");
       setShowAdd(false);
-    } catch (err) { console.error(err); }
+      show("Expense created successfully", "success");
+    } catch (err) {
+      console.error(err);
+      show("Failed to create. Please try again.", "error");
+    }
     finally { setSubmitting(false); }
   };
 
@@ -72,18 +86,17 @@ export default function ExpensesPage() {
     );
   }
 
+  if (error) {
+    return <ErrorState message={error} onRetry={loadData} />;
+  }
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="font-display text-2xl font-bold tracking-tight text-white">Expenses</h1>
-          <p className="text-sm text-neutral-400">Track and categorize business spending.</p>
-        </div>
-        <button onClick={() => setShowAdd(true)} className="flex items-center gap-1.5 rounded-xl bg-primary-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-primary-600/20 transition hover:bg-primary-500">
-          <Plus className="h-4 w-4" />
-          <span className="hidden sm:inline">Log Expense</span>
-        </button>
-      </div>
+      <PageHeader
+        title="Expenses"
+        subtitle="Track and categorize business spending."
+        action={{ label: "Log Expense", icon: Plus, onClick: () => setShowAdd(true) }}
+      />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <StatCard title="Total Expenses" value={totalExpenses} prefix="KSh " icon={DollarSign} accent="error" />
@@ -159,69 +172,55 @@ export default function ExpensesPage() {
       </div>
 
       {/* Add Expense Modal */}
-      <AnimatePresence>
-        {showAdd && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowAdd(false)} className="absolute inset-0 bg-neutral-950/80 backdrop-blur-md" />
-            <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} className="relative w-full max-w-md rounded-2xl border border-neutral-800 bg-neutral-900/90 p-6 shadow-2xl backdrop-blur-2xl">
-              <div className="flex items-center justify-between border-b border-neutral-800 pb-4">
-                <h3 className="font-display text-base font-semibold text-white">Log New Expense</h3>
-                <button onClick={() => setShowAdd(false)} className="rounded-lg border border-neutral-800 bg-neutral-950 p-1.5 text-neutral-400 hover:text-white transition">
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-
-              <form onSubmit={handleAdd} className="mt-5 space-y-4">
-                <div>
-                  <label className="block text-xs font-medium text-neutral-400 mb-1.5">Description</label>
-                  <input required type="text" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="e.g. AWS Cloud Servers" className="w-full rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-3 text-sm text-white focus:border-primary-500 focus:outline-none" />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-medium text-neutral-400 mb-1.5">Amount (KSh)</label>
-                    <input required type="number" min="0" step="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0.00" className="w-full rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-3 text-sm text-white focus:border-primary-500 focus:outline-none font-mono" />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-neutral-400 mb-1.5">Date</label>
-                    <input required type="date" value={date} onChange={(e) => setDate(e.target.value)} className="w-full rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-3 text-sm text-white focus:border-primary-500 focus:outline-none font-mono" />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-medium text-neutral-400 mb-1.5">Category</label>
-                  <select value={category} onChange={(e) => setCategory(e.target.value)} className="w-full rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-3 text-sm text-white focus:border-primary-500 focus:outline-none">
-                    {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
-                  </select>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-medium text-neutral-400 mb-1.5">Vendor</label>
-                    <input type="text" value={vendor} onChange={(e) => setVendor(e.target.value)} placeholder="e.g. Amazon" className="w-full rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-3 text-sm text-white focus:border-primary-500 focus:outline-none" />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-neutral-400 mb-1.5">Payment Method</label>
-                    <select value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value as Expense["paymentMethod"])} className="w-full rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-3 text-sm text-white focus:border-primary-500 focus:outline-none">
-                      <option value="card">Card</option>
-                      <option value="mpesa">M-Pesa</option>
-                      <option value="cash">Cash</option>
-                      <option value="bank">Bank Transfer</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="flex justify-end gap-3 border-t border-neutral-800 pt-5">
-                  <button type="button" onClick={() => setShowAdd(false)} className="rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-2.5 text-xs font-semibold text-neutral-400 hover:text-white transition">Cancel</button>
-                  <button type="submit" disabled={submitting} className="rounded-xl bg-primary-600 px-5 py-2.5 text-xs font-semibold text-white hover:bg-primary-500 transition disabled:opacity-50">
-                    {submitting ? "Recording..." : "Record Expense"}
-                  </button>
-                </div>
-              </form>
-            </motion.div>
+      <Modal isOpen={showAdd} onClose={() => setShowAdd(false)} title="Log New Expense">
+        <form onSubmit={handleAdd} className="space-y-4">
+          <div>
+            <label className="block text-xs font-medium text-neutral-400 mb-1.5">Description</label>
+            <input required type="text" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="e.g. AWS Cloud Servers" className="w-full rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-3 text-sm text-white focus:border-primary-500 focus:outline-none" />
           </div>
-        )}
-      </AnimatePresence>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-medium text-neutral-400 mb-1.5">Amount (KSh)</label>
+              <input required type="number" min="0" step="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0.00" className="w-full rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-3 text-sm text-white focus:border-primary-500 focus:outline-none font-mono" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-neutral-400 mb-1.5">Date</label>
+              <input required type="date" value={date} onChange={(e) => setDate(e.target.value)} className="w-full rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-3 text-sm text-white focus:border-primary-500 focus:outline-none font-mono" />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-neutral-400 mb-1.5">Category</label>
+            <select value={category} onChange={(e) => setCategory(e.target.value)} className="w-full rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-3 text-sm text-white focus:border-primary-500 focus:outline-none">
+              {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
+            </select>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-medium text-neutral-400 mb-1.5">Vendor</label>
+              <input type="text" value={vendor} onChange={(e) => setVendor(e.target.value)} placeholder="e.g. Amazon" className="w-full rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-3 text-sm text-white focus:border-primary-500 focus:outline-none" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-neutral-400 mb-1.5">Payment Method</label>
+              <select value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value as Expense["paymentMethod"])} className="w-full rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-3 text-sm text-white focus:border-primary-500 focus:outline-none">
+                <option value="card">Card</option>
+                <option value="mpesa">M-Pesa</option>
+                <option value="cash">Cash</option>
+                <option value="bank">Bank Transfer</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-3 border-t border-neutral-800 pt-5">
+            <button type="button" onClick={() => setShowAdd(false)} className="rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-2.5 text-xs font-semibold text-neutral-400 hover:text-white transition">Cancel</button>
+            <button type="submit" disabled={submitting} className="rounded-xl bg-primary-600 px-5 py-2.5 text-xs font-semibold text-white hover:bg-primary-500 transition disabled:opacity-50">
+              {submitting ? "Recording..." : "Record Expense"}
+            </button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 }

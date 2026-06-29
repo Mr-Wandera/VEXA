@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
-import { motion } from "motion/react";
 import { ChartBar as BarChart3, TrendingUp, TrendingDown, DollarSign, Download, Sparkles } from "lucide-react";
 import { BarChart, Bar, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from "recharts";
 import { apiClient } from "../lib/apiClient";
 import { DashboardMetrics } from "../types";
 import StatCard from "../components/ui/StatCard";
+import ErrorState from "../components/ui/ErrorState";
 
 const CASHFLOW_DATA = [
   { month: "Jan", income: 24000, expense: 11000, net: 13000 },
@@ -27,12 +27,14 @@ const EXPENSE_BREAKDOWN = [
 export default function ReportsPage() {
   const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
-    apiClient.getMetrics().then(({ metrics }) => { setMetrics(metrics); setLoading(false); }).catch(() => setLoading(false));
+    apiClient.getMetrics().then(({ metrics }) => { setMetrics(metrics); setLoading(false); }).catch((err) => { console.error(err); setError(true); setLoading(false); });
   }, []);
 
   if (loading || !metrics) return <div className="space-y-6"><div className="h-8 w-32 rounded-lg shimmer" /><div className="h-96 rounded-2xl shimmer" /></div>;
+  if (error) return <ErrorState message="Failed to load report data." onRetry={() => window.location.reload()} />;
 
   return (
     <div className="space-y-6">

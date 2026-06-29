@@ -195,7 +195,7 @@ export default function VexaChatBot({ initialQuery, onClose }: VexaChatBotProps)
           disabled={!input.trim() || loading}
           className="rounded-xl bg-primary-600 text-white p-3 hover:bg-primary-500 disabled:opacity-40 transition shrink-0"
         >
-          <Send className="h-4.5 w-4.5" />
+          <Send className="h-4 w-4" />
         </button>
       </form>
     </div>

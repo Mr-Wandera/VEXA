@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import { motion } from "motion/react";
-import { ShoppingCart, Receipt, FileText, Package, Users, Sparkles, Clock, DollarSign } from "lucide-react";
+import { ShoppingCart, Receipt, FileText, Package, Users, Sparkles, Clock } from "lucide-react";
 import { apiClient } from "../lib/apiClient";
 import { TimelineEvent } from "../types";
+import ErrorState from "../components/ui/ErrorState";
 
 const ICON_MAP = {
   sale: ShoppingCart,
@@ -27,12 +28,14 @@ const COLOR_MAP = {
 export default function TimelinePage() {
   const [events, setEvents] = useState<TimelineEvent[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
-    apiClient.getTimeline().then((e) => { setEvents(e); setLoading(false); }).catch(() => setLoading(false));
+    apiClient.getTimeline().then((e) => { setEvents(e); setLoading(false); }).catch((err) => { console.error(err); setError(true); setLoading(false); });
   }, []);
 
   if (loading) return <div className="space-y-6"><div className="h-8 w-32 rounded-lg shimmer" /><div className="space-y-3">{Array.from({ length: 5 }).map((_, i) => <div key={i} className="h-16 rounded-2xl shimmer" />)}</div></div>;
+  if (error) return <ErrorState message="Failed to load timeline." onRetry={() => window.location.reload()} />;
 
   return (
     <div className="space-y-6">

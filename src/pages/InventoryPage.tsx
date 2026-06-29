@@ -1,13 +1,19 @@
 import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "motion/react";
-import { Package, Plus, X, TriangleAlert as AlertTriangle, TrendingUp, DollarSign, Boxes } from "lucide-react";
+import { motion } from "motion/react";
+import { Package, Plus, TriangleAlert as AlertTriangle, DollarSign, Boxes } from "lucide-react";
 import { apiClient } from "../lib/apiClient";
 import { Product } from "../types";
 import StatCard from "../components/ui/StatCard";
+import { useToast } from "../components/ui/Toast";
+import ErrorState from "../components/ui/ErrorState";
+import Modal from "../components/ui/Modal";
+import PageHeader from "../components/ui/PageHeader";
 
 export default function InventoryPage() {
+  const { show } = useToast();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [showAdd, setShowAdd] = useState(false);
   const [filter, setFilter] = useState<"all" | "low" | "out">("all");
 
@@ -28,10 +34,12 @@ export default function InventoryPage() {
 
   const loadData = async () => {
     try {
+      setError(null);
       const p = await apiClient.getProducts();
       setProducts(p);
     } catch (err) {
       console.error(err);
+      setError("Failed to load products. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -52,8 +60,10 @@ export default function InventoryPage() {
       setProducts((prev) => [product, ...prev]);
       setName(""); setSku(""); setCategory(""); setPrice(""); setCost(""); setStock(""); setReorderLevel("10");
       setShowAdd(false);
+      show("Product created successfully", "success");
     } catch (err) {
       console.error(err);
+      show("Failed to create. Please try again.", "error");
     } finally {
       setSubmitting(false);
     }
@@ -80,18 +90,17 @@ export default function InventoryPage() {
     );
   }
 
+  if (error) {
+    return <ErrorState message={error} onRetry={loadData} />;
+  }
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="font-display text-2xl font-bold tracking-tight text-white">Inventory</h1>
-          <p className="text-sm text-neutral-400">Manage products and track stock levels.</p>
-        </div>
-        <button onClick={() => setShowAdd(true)} className="flex items-center gap-1.5 rounded-xl bg-primary-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-primary-600/20 transition hover:bg-primary-500">
-          <Plus className="h-4 w-4" />
-          <span className="hidden sm:inline">Add Product</span>
-        </button>
-      </div>
+      <PageHeader
+        title="Inventory"
+        subtitle="Manage products and track stock levels."
+        action={{ label: "Add Product", icon: Plus, onClick: () => setShowAdd(true) }}
+      />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard title="Total Products" value={products.length} icon={Package} accent="primary" />
@@ -173,78 +182,64 @@ export default function InventoryPage() {
       </div>
 
       {/* Add Product Modal */}
-      <AnimatePresence>
-        {showAdd && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowAdd(false)} className="absolute inset-0 bg-neutral-950/80 backdrop-blur-md" />
-            <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} className="relative w-full max-w-lg rounded-2xl border border-neutral-800 bg-neutral-900/90 p-6 shadow-2xl backdrop-blur-2xl">
-              <div className="flex items-center justify-between border-b border-neutral-800 pb-4">
-                <h3 className="font-display text-base font-semibold text-white">Add New Product</h3>
-                <button onClick={() => setShowAdd(false)} className="rounded-lg border border-neutral-800 bg-neutral-950 p-1.5 text-neutral-400 hover:text-white transition">
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-
-              <form onSubmit={handleAddProduct} className="mt-5 space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-medium text-neutral-400 mb-1.5">Product Name</label>
-                    <input required type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Premium Hoodie" className="w-full rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-3 text-sm text-white focus:border-primary-500 focus:outline-none" />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-neutral-400 mb-1.5">SKU</label>
-                    <input required type="text" value={sku} onChange={(e) => setSku(e.target.value)} placeholder="HD-001" className="w-full rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-3 text-sm text-white focus:border-primary-500 focus:outline-none font-mono" />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-medium text-neutral-400 mb-1.5">Category</label>
-                  <input required type="text" value={category} onChange={(e) => setCategory(e.target.value)} placeholder="Apparel, Services, etc." className="w-full rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-3 text-sm text-white focus:border-primary-500 focus:outline-none" />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-medium text-neutral-400 mb-1.5">Selling Price (KSh)</label>
-                    <input required type="number" min="0" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="2500" className="w-full rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-3 text-sm text-white focus:border-primary-500 focus:outline-none font-mono" />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-neutral-400 mb-1.5">Cost Price (KSh)</label>
-                    <input required type="number" min="0" value={cost} onChange={(e) => setCost(e.target.value)} placeholder="1200" className="w-full rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-3 text-sm text-white focus:border-primary-500 focus:outline-none font-mono" />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-xs font-medium text-neutral-400 mb-1.5">Stock</label>
-                    <input required type="number" min="0" value={stock} onChange={(e) => setStock(e.target.value)} placeholder="45" className="w-full rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-3 text-sm text-white focus:border-primary-500 focus:outline-none font-mono" />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-neutral-400 mb-1.5">Reorder At</label>
-                    <input required type="number" min="0" value={reorderLevel} onChange={(e) => setReorderLevel(e.target.value)} placeholder="15" className="w-full rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-3 text-sm text-white focus:border-primary-500 focus:outline-none font-mono" />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-neutral-400 mb-1.5">Unit</label>
-                    <select value={unit} onChange={(e) => setUnit(e.target.value)} className="w-full rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-3 text-sm text-white focus:border-primary-500 focus:outline-none">
-                      <option value="pcs">pcs</option>
-                      <option value="kg">kg</option>
-                      <option value="hr">hr</option>
-                      <option value="mo">mo</option>
-                      <option value="pack">pack</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="flex justify-end gap-3 border-t border-neutral-800 pt-5">
-                  <button type="button" onClick={() => setShowAdd(false)} className="rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-2.5 text-xs font-semibold text-neutral-400 hover:text-white transition">Cancel</button>
-                  <button type="submit" disabled={submitting} className="rounded-xl bg-primary-600 px-5 py-2.5 text-xs font-semibold text-white hover:bg-primary-500 transition disabled:opacity-50">
-                    {submitting ? "Adding..." : "Add Product"}
-                  </button>
-                </div>
-              </form>
-            </motion.div>
+      <Modal isOpen={showAdd} onClose={() => setShowAdd(false)} title="Add New Product">
+        <form onSubmit={handleAddProduct} className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-medium text-neutral-400 mb-1.5">Product Name</label>
+              <input required type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Premium Hoodie" className="w-full rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-3 text-sm text-white focus:border-primary-500 focus:outline-none" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-neutral-400 mb-1.5">SKU</label>
+              <input required type="text" value={sku} onChange={(e) => setSku(e.target.value)} placeholder="HD-001" className="w-full rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-3 text-sm text-white focus:border-primary-500 focus:outline-none font-mono" />
+            </div>
           </div>
-        )}
-      </AnimatePresence>
+
+          <div>
+            <label className="block text-xs font-medium text-neutral-400 mb-1.5">Category</label>
+            <input required type="text" value={category} onChange={(e) => setCategory(e.target.value)} placeholder="Apparel, Services, etc." className="w-full rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-3 text-sm text-white focus:border-primary-500 focus:outline-none" />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-medium text-neutral-400 mb-1.5">Selling Price (KSh)</label>
+              <input required type="number" min="0" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="2500" className="w-full rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-3 text-sm text-white focus:border-primary-500 focus:outline-none font-mono" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-neutral-400 mb-1.5">Cost Price (KSh)</label>
+              <input required type="number" min="0" value={cost} onChange={(e) => setCost(e.target.value)} placeholder="1200" className="w-full rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-3 text-sm text-white focus:border-primary-500 focus:outline-none font-mono" />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-3 gap-4">
+            <div>
+              <label className="block text-xs font-medium text-neutral-400 mb-1.5">Stock</label>
+              <input required type="number" min="0" value={stock} onChange={(e) => setStock(e.target.value)} placeholder="45" className="w-full rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-3 text-sm text-white focus:border-primary-500 focus:outline-none font-mono" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-neutral-400 mb-1.5">Reorder At</label>
+              <input required type="number" min="0" value={reorderLevel} onChange={(e) => setReorderLevel(e.target.value)} placeholder="15" className="w-full rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-3 text-sm text-white focus:border-primary-500 focus:outline-none font-mono" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-neutral-400 mb-1.5">Unit</label>
+              <select value={unit} onChange={(e) => setUnit(e.target.value)} className="w-full rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-3 text-sm text-white focus:border-primary-500 focus:outline-none">
+                <option value="pcs">pcs</option>
+                <option value="kg">kg</option>
+                <option value="hr">hr</option>
+                <option value="mo">mo</option>
+                <option value="pack">pack</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-3 border-t border-neutral-800 pt-5">
+            <button type="button" onClick={() => setShowAdd(false)} className="rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-2.5 text-xs font-semibold text-neutral-400 hover:text-white transition">Cancel</button>
+            <button type="submit" disabled={submitting} className="rounded-xl bg-primary-600 px-5 py-2.5 text-xs font-semibold text-white hover:bg-primary-500 transition disabled:opacity-50">
+              {submitting ? "Adding..." : "Add Product"}
+            </button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 }

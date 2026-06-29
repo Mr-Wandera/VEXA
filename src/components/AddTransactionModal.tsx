@@ -92,7 +92,7 @@ export default function AddTransactionModal({
             className="relative w-full max-w-lg overflow-hidden rounded-2xl border border-neutral-800 bg-neutral-900/90 p-6 shadow-2xl backdrop-blur-2xl"
           >
             {/* Header */}
-            <div className="flex items-center justify-between border-b border-neutral-800 pb-4.5">
+            <div className="flex items-center justify-between border-b border-neutral-800 pb-4">
               <div className="flex items-center gap-2">
                 <PlusCircle className="h-5 w-5 text-primary-400" />
                 <h3 className="font-display text-base font-semibold text-white tracking-wide">

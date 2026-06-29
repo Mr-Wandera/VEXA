@@ -1,5 +1,5 @@
 import { motion } from "motion/react";
-import { Sparkles, ArrowRight, TrendingUp, Shield, Zap, ChartBar as BarChart3, Users, Package, Check } from "lucide-react";
+import { Sparkles, ArrowRight, TrendingUp, Shield, Zap, ChartBar as BarChart3, Users, Package, Check, Star } from "lucide-react";
 import { useRouter } from "../lib/router";
 
 export default function LandingPage() {
@@ -7,7 +7,6 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen bg-neutral-950 text-white overflow-x-hidden">
-      {/* Background effects */}
       <div className="grid-bg pointer-events-none fixed inset-0 opacity-30" />
       <div className="pointer-events-none fixed inset-0">
         <div className="absolute left-1/4 top-0 h-[500px] w-[500px] rounded-full bg-primary-500/10 blur-[120px]" />
@@ -16,12 +15,12 @@ export default function LandingPage() {
 
       {/* Nav */}
       <nav className="relative z-10 flex items-center justify-between px-6 py-5 lg:px-12">
-        <div className="flex items-center gap-2.5">
+        <button onClick={() => navigate("/")} className="flex items-center gap-2.5">
           <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-tr from-primary-500 to-secondary-500 shadow-lg shadow-primary-500/20">
             <Sparkles className="h-5 w-5 text-white" />
           </div>
           <span className="font-display text-lg font-bold tracking-tight">VEXA</span>
-        </div>
+        </button>
         <div className="hidden items-center gap-8 md:flex">
           <a href="#features" className="text-sm text-neutral-400 hover:text-white transition">Features</a>
           <a href="#ai" className="text-sm text-neutral-400 hover:text-white transition">VEXA AI</a>
@@ -78,6 +77,16 @@ export default function LandingPage() {
           </div>
           <p className="mt-4 text-xs text-neutral-500">No credit card required. Free for 30 days.</p>
         </motion.div>
+      </section>
+
+      {/* Trust bar */}
+      <section className="relative z-10 mx-auto max-w-4xl px-6 pb-20">
+        <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-sm text-neutral-500">
+          <span className="flex items-center gap-1.5"><Check className="h-4 w-4 text-primary-400" /> SOC 2 Ready</span>
+          <span className="flex items-center gap-1.5"><Check className="h-4 w-4 text-primary-400" /> Bank-grade encryption</span>
+          <span className="flex items-center gap-1.5"><Check className="h-4 w-4 text-primary-400" /> M-Pesa compatible</span>
+          <span className="flex items-center gap-1.5"><Check className="h-4 w-4 text-primary-400" /> Works offline</span>
+        </div>
       </section>
 
       {/* Features grid */}
@@ -152,6 +161,102 @@ export default function LandingPage() {
             ))}
           </div>
         </motion.div>
+      </section>
+
+      {/* Testimonials */}
+      <section className="relative z-10 mx-auto max-w-6xl px-6 pb-32">
+        <div className="mb-16 text-center">
+          <h2 className="font-display text-3xl font-bold tracking-tight sm:text-4xl">Loved by entrepreneurs</h2>
+          <p className="mt-3 text-neutral-400">Join thousands of businesses already growing with VEXA.</p>
+        </div>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          {[
+            { name: "Brian K.", role: "Founder, Aesthetic Lab", quote: "VEXA replaced three apps I was paying for. The AI insights alone are worth it." },
+            { name: "Aisha M.", role: "CEO, Nairobi Textiles", quote: "I finally know my cash flow in real time. No more spreadsheet nightmares." },
+            { name: "David O.", role: "Owner, CloudHost Africa", quote: "The inventory alerts saved me from three stockouts this month. Game changer." },
+          ].map((t, i) => (
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: i * 0.1 }}
+              className="rounded-2xl border border-neutral-800/60 bg-neutral-900/30 p-6 backdrop-blur-xl"
+            >
+              <div className="mb-3 flex gap-0.5">
+                {Array.from({ length: 5 }).map((_, j) => <Star key={j} className="h-4 w-4 fill-accent-400 text-accent-400" />)}
+              </div>
+              <p className="text-sm text-neutral-300 leading-relaxed">"{t.quote}"</p>
+              <div className="mt-4 flex items-center gap-3">
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-tr from-primary-500/20 to-secondary-500/20 text-sm font-bold text-primary-300">
+                  {t.name.charAt(0)}
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-white">{t.name}</p>
+                  <p className="text-xs text-neutral-500">{t.role}</p>
+                </div>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      </section>
+
+      {/* Pricing */}
+      <section id="pricing" className="relative z-10 mx-auto max-w-5xl px-6 pb-32">
+        <div className="mb-16 text-center">
+          <h2 className="font-display text-3xl font-bold tracking-tight sm:text-4xl">Simple, transparent pricing</h2>
+          <p className="mt-3 text-neutral-400">Start free. Upgrade when you're ready.</p>
+        </div>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          {[
+            { name: "Starter", price: "Free", desc: "For new businesses getting started.", features: ["Up to 50 transactions/mo", "Basic dashboard", "1 user", "Community support"], cta: "Start free", highlight: false },
+            { name: "Growth", price: "KSh 2,500", period: "/mo", desc: "For growing businesses that need more.", features: ["Unlimited transactions", "VEXA AI insights", "5 users", "Priority support", "Inventory management"], cta: "Start 30-day trial", highlight: true },
+            { name: "Enterprise", price: "Custom", desc: "For large operations with custom needs.", features: ["Everything in Growth", "Unlimited users", "Custom integrations", "Dedicated manager", "SLA guarantee"], cta: "Contact sales", highlight: false },
+          ].map((plan, i) => (
+            <motion.div
+              key={plan.name}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: i * 0.1 }}
+              className={`relative rounded-2xl border p-6 backdrop-blur-xl ${
+                plan.highlight
+                  ? "border-primary-500/40 bg-primary-500/5"
+                  : "border-neutral-800/60 bg-neutral-900/30"
+              }`}
+            >
+              {plan.highlight && (
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-primary-600 px-3 py-1 text-xs font-semibold text-white">
+                  Most popular
+                </div>
+              )}
+              <h3 className="font-display text-lg font-semibold text-white">{plan.name}</h3>
+              <p className="mt-1 text-xs text-neutral-400">{plan.desc}</p>
+              <div className="mt-4 flex items-baseline gap-1">
+                <span className="font-display text-3xl font-bold text-white">{plan.price}</span>
+                {plan.period && <span className="text-sm text-neutral-400">{plan.period}</span>}
+              </div>
+              <ul className="mt-5 space-y-2.5">
+                {plan.features.map((f) => (
+                  <li key={f} className="flex items-center gap-2 text-sm text-neutral-300">
+                    <Check className="h-4 w-4 shrink-0 text-primary-400" />
+                    {f}
+                  </li>
+                ))}
+              </ul>
+              <button
+                onClick={() => navigate("/auth")}
+                className={`mt-6 w-full rounded-xl py-3 text-sm font-semibold transition ${
+                  plan.highlight
+                    ? "bg-primary-600 text-white hover:bg-primary-500"
+                    : "border border-neutral-800 bg-neutral-900/50 text-white hover:bg-neutral-800/50"
+                }`}
+              >
+                {plan.cta}
+              </button>
+            </motion.div>
+          ))}
+        </div>
       </section>
 
       {/* CTA */}
