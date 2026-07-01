@@ -55,7 +55,7 @@ export default function Sidebar({ open, onClose, notificationCount }: SidebarPro
         <div className="flex h-full flex-col">
           {/* Logo */}
           <div className="flex items-center justify-between px-6 py-5">
-            <button onClick={() => handleNavigate("/")} className="flex items-center gap-2.5">
+            <button onClick={() => handleNavigate("/app/dashboard")} className="flex items-center gap-2.5">
               <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-tr from-primary-500 to-secondary-500 shadow-lg shadow-primary-500/20">
                 <Sparkles className="h-5 w-5 text-white" />
               </div>
@@ -70,7 +70,7 @@ export default function Sidebar({ open, onClose, notificationCount }: SidebarPro
           <nav className="flex-1 overflow-y-auto px-3 py-2">
             <div className="space-y-0.5">
               {NAV_ITEMS.map((item) => {
-                const isActive = path === item.path;
+                const isActive = path === item.path || path.startsWith(item.path + "/");
                 const Icon = item.icon;
                 return (
                   <button

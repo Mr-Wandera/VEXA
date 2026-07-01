@@ -8,6 +8,7 @@ import { useToast } from "../components/ui/Toast";
 import ErrorState from "../components/ui/ErrorState";
 import Modal from "../components/ui/Modal";
 import PageHeader from "../components/ui/PageHeader";
+import { useCurrency } from "../lib/useCurrency";
 
 export default function CustomersPage() {
   const { show } = useToast();
@@ -19,6 +20,7 @@ export default function CustomersPage() {
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const currency = useCurrency();
 
   useEffect(() => { loadData(); }, []);
 
@@ -72,9 +74,16 @@ export default function CustomersPage() {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <StatCard title="Total Customers" value={clients.length} icon={Users} accent="primary" />
         <StatCard title="Active" value={activeCount} icon={UserPlus} accent="secondary" />
-        <StatCard title="Outstanding" value={totalOutstanding} prefix="KSh " icon={DollarSign} accent="error" />
+        <StatCard title="Outstanding" value={totalOutstanding} prefix={`${currency} `} icon={DollarSign} accent="error" />
       </div>
 
+      {clients.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-20 text-center">
+          <div className="mb-3 rounded-2xl bg-neutral-900/50 p-4"><Users className="h-8 w-8 text-neutral-600" /></div>
+          <p className="text-sm text-neutral-400">No customers yet.</p>
+          <button onClick={() => setShowAdd(true)} className="mt-3 text-sm font-medium text-primary-400 hover:text-primary-300 transition">Add your first customer →</button>
+        </div>
+      ) : (
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {clients.map((client, i) => (
           <motion.div
@@ -107,18 +116,19 @@ export default function CustomersPage() {
             <div className="mt-4 flex items-center justify-between border-t border-neutral-800/60 pt-3">
               <div>
                 <p className="text-[10px] uppercase text-neutral-500">Total Invoiced</p>
-                <p className="font-mono text-sm font-semibold text-white">KSh {client.totalInvoiced.toLocaleString()}</p>
+                <p className="font-mono text-sm font-semibold text-white">{currency} {client.totalInvoiced.toLocaleString()}</p>
               </div>
               <div className="text-right">
                 <p className="text-[10px] uppercase text-neutral-500">Outstanding</p>
                 <p className={`font-mono text-sm font-semibold ${client.outstandingBalance > 0 ? "text-error-400" : "text-success-400"}`}>
-                  KSh {client.outstandingBalance.toLocaleString()}
+                  {currency} {client.outstandingBalance.toLocaleString()}
                 </p>
               </div>
             </div>
           </motion.div>
         ))}
       </div>
+      )}
 
       <Modal isOpen={showAdd} onClose={() => setShowAdd(false)} title="Add New Customer">
         <form onSubmit={handleAdd} className="space-y-4">

@@ -1,16 +1,20 @@
 import { useState, useEffect } from "react";
-import { motion } from "motion/react";
 import { FileText, Plus, CircleCheck as CheckCircle, Clock, TriangleAlert as AlertTriangle, Sparkles, Check } from "lucide-react";
 import { apiClient } from "../lib/apiClient";
-import { Invoice } from "../types";
+import { Invoice, Client } from "../types";
 import PageHeader from "./ui/PageHeader";
 import ErrorState from "./ui/ErrorState";
 import Modal from "./ui/Modal";
 import { useToast } from "./ui/Toast";
+import { useRouter } from "../lib/router";
+import { useCurrency } from "../lib/useCurrency";
 
 export default function InvoiceManager() {
   const { show } = useToast();
+  const { navigate } = useRouter();
+  const currency = useCurrency();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
@@ -24,20 +28,34 @@ export default function InvoiceManager() {
 
   const loadInvoices = async () => {
     setError(false);
-    try { setInvoices(await apiClient.getInvoices()); }
-    catch (err) { console.error(err); setError(true); }
+    try {
+      const [invData, clientData] = await Promise.all([
+        apiClient.getInvoices(),
+        apiClient.getClients(),
+      ]);
+      setInvoices(invData);
+      setClients(clientData);
+    } catch (err) { console.error(err); setError(true); }
     finally { setLoading(false); }
   };
 
   const handleCreateInvoice = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!client || !amount || !dueDate) {
-      show("Please fill in all fields.", "error");
+    if (!client.trim()) {
+      show("Please enter a client name.", "error");
+      return;
+    }
+    if (!amount || Number(amount) <= 0) {
+      show("Please enter a valid amount greater than zero.", "error");
+      return;
+    }
+    if (!dueDate) {
+      show("Please select a due date.", "error");
       return;
     }
     setSubmitting(true);
     try {
-      const inv = await apiClient.addInvoice({ client, amount: Number(amount), dueDate });
+      const inv = await apiClient.addInvoice({ client: client.trim(), amount: Number(amount), dueDate });
       setInvoices((prev) => [inv, ...prev]);
       setClient(""); setAmount(""); setDueDate("");
       setShowCreate(false);
@@ -61,8 +79,14 @@ export default function InvoiceManager() {
     }
   };
 
-  const handleDraftReminder = (invNumber: string) => {
-    window.location.hash = "/app/ai";
+  const handleDraftReminder = (inv: Invoice) => {
+    navigate("/app/ai");
+    setTimeout(() => {
+      const event = new CustomEvent("vexa-chat-query", {
+        detail: `Draft a professional payment reminder email for overdue invoice ${inv.invoiceNumber} from ${inv.client} (${currency} ${inv.amount.toLocaleString()})`,
+      });
+      window.dispatchEvent(event);
+    }, 100);
   };
 
   if (loading) return <div className="space-y-6"><div className="h-8 w-32 rounded-lg shimmer" /><div className="grid grid-cols-3 gap-4">{Array.from({ length: 3 }).map((_, i) => <div key={i} className="h-20 rounded-xl shimmer" />)}</div></div>;
@@ -111,6 +135,9 @@ export default function InvoiceManager() {
             <div className="flex flex-col items-center justify-center py-16 text-center">
               <div className="mb-3 rounded-2xl bg-neutral-900/50 p-4"><FileText className="h-8 w-8 text-neutral-600" /></div>
               <p className="text-sm text-neutral-400">No invoices found.</p>
+              <button onClick={() => setShowCreate(true)} className="mt-3 text-sm font-medium text-primary-400 hover:text-primary-300 transition">
+                Create your first invoice →
+              </button>
             </div>
           ) : (
             <table className="w-full text-left border-collapse">
@@ -136,7 +163,7 @@ export default function InvoiceManager() {
                         {inv.status}
                       </span>
                     </td>
-                    <td className="py-3.5 px-4 font-mono text-sm font-semibold text-right text-white">KSh {inv.amount.toLocaleString()}</td>
+                    <td className="py-3.5 px-4 font-mono text-sm font-semibold text-right text-white">{currency} {inv.amount.toLocaleString()}</td>
                     <td className="py-3.5 px-4 text-right">
                       <div className="flex items-center justify-end gap-2.5 opacity-80 group-hover:opacity-100 transition">
                         {inv.status === 'pending' && (
@@ -145,7 +172,7 @@ export default function InvoiceManager() {
                           </button>
                         )}
                         {inv.status === 'overdue' && (
-                          <button onClick={() => handleDraftReminder(inv.invoiceNumber)} className="inline-flex items-center gap-1 rounded-lg border border-primary-500/20 bg-primary-500/10 px-2.5 py-1 text-xs font-semibold text-primary-400 hover:bg-primary-600 hover:text-white transition">
+                          <button onClick={() => handleDraftReminder(inv)} className="inline-flex items-center gap-1 rounded-lg border border-primary-500/20 bg-primary-500/10 px-2.5 py-1 text-xs font-semibold text-primary-400 hover:bg-primary-600 hover:text-white transition">
                             <Sparkles className="h-3 w-3" /><span>Draft Reminder</span>
                           </button>
                         )}
@@ -164,13 +191,28 @@ export default function InvoiceManager() {
         <form onSubmit={handleCreateInvoice} className="space-y-4">
           <div>
             <label className="block text-xs font-medium text-neutral-400 mb-1.5">Client Name</label>
-            <input required type="text" value={client} onChange={(e) => setClient(e.target.value)} placeholder="e.g. Aisha Mohammed"
-              className="w-full rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-3 text-sm text-white focus:border-primary-500 focus:outline-none" />
+            <input
+              required
+              type="text"
+              value={client}
+              onChange={(e) => setClient(e.target.value)}
+              placeholder="e.g. Aisha Mohammed"
+              list="client-suggestions"
+              className="w-full rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-3 text-sm text-white focus:border-primary-500 focus:outline-none"
+            />
+            <datalist id="client-suggestions">
+              {clients.map((c) => (
+                <option key={c.id} value={c.name} />
+              ))}
+            </datalist>
+            {clients.length > 0 && (
+              <p className="mt-1 text-[10px] text-neutral-500">Start typing to select from existing customers.</p>
+            )}
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-medium text-neutral-400 mb-1.5">Amount (KSh)</label>
-              <input required type="number" min="0" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0.00"
+              <label className="block text-xs font-medium text-neutral-400 mb-1.5">Amount ({currency})</label>
+              <input required type="number" min="0.01" step="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0.00"
                 className="w-full rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-3 text-sm text-white focus:border-primary-500 focus:outline-none font-mono" />
             </div>
             <div>

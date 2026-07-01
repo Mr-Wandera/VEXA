@@ -10,9 +10,21 @@ import ErrorState from "../components/ui/ErrorState";
 
 interface DashboardPageProps {
   onAskAI: (query: string) => void;
+  refreshKey?: number;
 }
 
-export default function DashboardPage({ onAskAI }: DashboardPageProps) {
+const INSIGHT_ACTION_MAP: Record<string, string> = {
+  remind_overdue_inv_104: "Draft a professional reminder email for overdue invoice INV-2026-104 from Arc Software ($4,500)",
+  "remind_overdue_inv-104": "Draft a professional reminder email for overdue invoice INV-2026-104 from Arc Software ($4,500)",
+  optimize_saas: "Analyze my SaaS and cloud infrastructure spending. Where can I cut costs?",
+  optimize_spend: "Analyze my SaaS and cloud infrastructure spending. Where can I cut costs?",
+  view_runway: "Show me a detailed cash flow runway projection for the next 6 months",
+  view_stripe: "What is the status of my Stripe integration and pending payouts?",
+  reorder_p4: "I need to reorder Sticker Packs. Which supplier should I contact and what quantity?",
+  analyze_marketing: "Analyze my marketing expenses. Is my ad spend generating good ROI?",
+};
+
+export default function DashboardPage({ onAskAI, refreshKey }: DashboardPageProps) {
   const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
   const [profile, setProfile] = useState<BusinessProfile | null>(null);
   const [insights, setInsights] = useState<VexaInsight[]>([]);
@@ -22,7 +34,7 @@ export default function DashboardPage({ onAskAI }: DashboardPageProps) {
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [refreshKey]);
 
   const loadData = async () => {
     setError(false);
@@ -107,7 +119,7 @@ export default function DashboardPage({ onAskAI }: DashboardPageProps) {
           prefix={currency + " "}
           icon={TrendingDown}
           accent="warning"
-          trend={{ value: "-3%", type: "up" }}
+          trend={{ value: "-3%", type: "down" }}
           subtext="Operating expenses"
           delay={0.1}
         />
@@ -184,7 +196,10 @@ export default function DashboardPage({ onAskAI }: DashboardPageProps) {
             insights={insights}
             loading={insightsLoading}
             onRefresh={refreshInsights}
-            onAction={(code) => onAskAI(`Take action: ${code}`)}
+            onAction={(code) => {
+              const prompt = INSIGHT_ACTION_MAP[code] || `Take action: ${code}`;
+              onAskAI(prompt);
+            }}
           />
         </div>
       </div>

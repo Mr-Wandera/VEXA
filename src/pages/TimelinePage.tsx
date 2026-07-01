@@ -4,6 +4,7 @@ import { ShoppingCart, Receipt, FileText, Package, Users, Sparkles, Clock } from
 import { apiClient } from "../lib/apiClient";
 import { TimelineEvent } from "../types";
 import ErrorState from "../components/ui/ErrorState";
+import { useCurrency } from "../lib/useCurrency";
 
 const ICON_MAP = {
   sale: ShoppingCart,
@@ -29,13 +30,20 @@ export default function TimelinePage() {
   const [events, setEvents] = useState<TimelineEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const currency = useCurrency();
+
+  const loadData = () => {
+    setLoading(true);
+    setError(false);
+    apiClient.getTimeline().then((e) => { setEvents(e); setLoading(false); }).catch((err) => { console.error(err); setError(true); setLoading(false); });
+  };
 
   useEffect(() => {
-    apiClient.getTimeline().then((e) => { setEvents(e); setLoading(false); }).catch((err) => { console.error(err); setError(true); setLoading(false); });
+    loadData();
   }, []);
 
   if (loading) return <div className="space-y-6"><div className="h-8 w-32 rounded-lg shimmer" /><div className="space-y-3">{Array.from({ length: 5 }).map((_, i) => <div key={i} className="h-16 rounded-2xl shimmer" />)}</div></div>;
-  if (error) return <ErrorState message="Failed to load timeline." onRetry={() => window.location.reload()} />;
+  if (error) return <ErrorState message="Failed to load timeline." onRetry={loadData} />;
 
   return (
     <div className="space-y-6">
@@ -49,7 +57,13 @@ export default function TimelinePage() {
         <div className="absolute left-5 top-0 h-full w-px bg-neutral-800" />
 
         <div className="space-y-4">
-          {events.map((event, i) => {
+          {events.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-20 text-center">
+              <div className="mb-3 rounded-2xl bg-neutral-900/50 p-4"><Clock className="h-8 w-8 text-neutral-600" /></div>
+              <p className="text-sm text-neutral-400">No activity yet.</p>
+            </div>
+          ) : (
+          events.map((event, i) => {
             const Icon = ICON_MAP[event.type] || Clock;
             return (
               <motion.div
@@ -67,7 +81,7 @@ export default function TimelinePage() {
                     <h4 className="font-display text-sm font-semibold text-white">{event.title}</h4>
                     {event.amount !== undefined && (
                       <span className="font-mono text-sm font-semibold text-neutral-300">
-                        {event.type === "expense" ? "-" : ""}KSh {event.amount.toLocaleString()}
+                        {event.type === "expense" ? "-" : ""}{currency} {event.amount.toLocaleString()}
                       </span>
                     )}
                   </div>
@@ -76,7 +90,8 @@ export default function TimelinePage() {
                 </div>
               </motion.div>
             );
-          })}
+          })
+          )}
         </div>
       </div>
     </div>

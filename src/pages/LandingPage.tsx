@@ -22,9 +22,9 @@ export default function LandingPage() {
           <span className="font-display text-lg font-bold tracking-tight">VEXA</span>
         </button>
         <div className="hidden items-center gap-8 md:flex">
-          <a href="#features" className="text-sm text-neutral-400 hover:text-white transition">Features</a>
-          <a href="#ai" className="text-sm text-neutral-400 hover:text-white transition">VEXA AI</a>
-          <a href="#pricing" className="text-sm text-neutral-400 hover:text-white transition">Pricing</a>
+          <button onClick={() => document.getElementById("features")?.scrollIntoView({ behavior: "smooth" })} className="text-sm text-neutral-400 hover:text-white transition">Features</button>
+          <button onClick={() => document.getElementById("ai")?.scrollIntoView({ behavior: "smooth" })} className="text-sm text-neutral-400 hover:text-white transition">VEXA AI</button>
+          <button onClick={() => document.getElementById("pricing")?.scrollIntoView({ behavior: "smooth" })} className="text-sm text-neutral-400 hover:text-white transition">Pricing</button>
         </div>
         <div className="flex items-center gap-3">
           <button onClick={() => navigate("/auth")} className="text-sm font-medium text-neutral-300 hover:text-white transition">
@@ -245,7 +245,7 @@ export default function LandingPage() {
                 ))}
               </ul>
               <button
-                onClick={() => navigate("/auth")}
+                onClick={() => plan.name === "Enterprise" ? window.open("mailto:sales@vexa.co?subject=Enterprise%20Inquiry", "_self") : navigate("/auth")}
                 className={`mt-6 w-full rounded-xl py-3 text-sm font-semibold transition ${
                   plan.highlight
                     ? "bg-primary-600 text-white hover:bg-primary-500"

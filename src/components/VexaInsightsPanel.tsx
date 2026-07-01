@@ -101,10 +101,10 @@ export default function VexaInsightsPanel({
                   )}
                 </div>
 
-                {insight.actionText && (
+                {insight.actionText && insight.actionCode && (
                   <div className="mt-3 flex justify-end">
                     <button
-                      onClick={() => onAction(insight.actionCode || '')}
+                      onClick={() => onAction(insight.actionCode!)}
                       className="inline-flex items-center gap-1.5 rounded-lg bg-neutral-900 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-primary-600 group/btn"
                     >
                       <span>{insight.actionText}</span>

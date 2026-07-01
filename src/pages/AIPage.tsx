@@ -7,7 +7,7 @@ export default function AIPage() {
         <h1 className="font-display text-2xl font-bold tracking-tight text-white">VEXA AI</h1>
         <p className="text-sm text-neutral-400">Your AI business partner — ask anything about your business.</p>
       </div>
-      <VexaChatBot />
+      <VexaChatBot variant="embedded" />
     </div>
   );
 }

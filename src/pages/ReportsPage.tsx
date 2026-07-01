@@ -1,40 +1,123 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { ChartBar as BarChart3, TrendingUp, TrendingDown, DollarSign, Download, Sparkles } from "lucide-react";
 import { BarChart, Bar, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from "recharts";
 import { apiClient } from "../lib/apiClient";
-import { DashboardMetrics } from "../types";
+import { DashboardMetrics, Expense, Transaction } from "../types";
 import StatCard from "../components/ui/StatCard";
 import ErrorState from "../components/ui/ErrorState";
+import { useToast } from "../components/ui/Toast";
+import { useCurrency } from "../lib/useCurrency";
 
-const CASHFLOW_DATA = [
-  { month: "Jan", income: 24000, expense: 11000, net: 13000 },
-  { month: "Feb", income: 29000, expense: 14000, net: 15000 },
-  { month: "Mar", income: 27000, expense: 13500, net: 13500 },
-  { month: "Apr", income: 34000, expense: 15200, net: 18800 },
-  { month: "May", income: 31000, expense: 12000, net: 19000 },
-  { month: "Jun", income: 38900, expense: 13620, net: 25280 },
-];
-
-const EXPENSE_BREAKDOWN = [
-  { name: "HR & Payroll", value: 8500, color: "#10b981" },
-  { name: "Rent", value: 1800, color: "#0ea5e9" },
-  { name: "Cloud", value: 1420, color: "#f59e0b" },
-  { name: "Marketing", value: 1200, color: "#f97316" },
-  { name: "Tools", value: 444, color: "#f43f5e" },
-  { name: "Other", value: 84, color: "#737373" },
-];
+const EXPENSE_COLORS = ["#10b981", "#0ea5e9", "#f59e0b", "#f97316", "#f43f5e", "#737373", "#34d399", "#38bdf8"];
 
 export default function ReportsPage() {
+  const { show } = useToast();
+  const currency = useCurrency();
   const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
+  const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
-  useEffect(() => {
-    apiClient.getMetrics().then(({ metrics }) => { setMetrics(metrics); setLoading(false); }).catch((err) => { console.error(err); setError(true); setLoading(false); });
+  const loadData = useCallback(async () => {
+    setError(false);
+    setLoading(true);
+    try {
+      const [{ metrics }, expData, txData] = await Promise.all([
+        apiClient.getMetrics(),
+        apiClient.getExpenses(),
+        apiClient.getTransactions(),
+      ]);
+      setMetrics(metrics);
+      setExpenses(expData);
+      setTransactions(txData);
+    } catch (err) {
+      console.error(err);
+      setError(true);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
+  useEffect(() => { loadData(); }, [loadData]);
+
+  const handleExport = () => {
+    if (!metrics) return;
+    setExporting(true);
+    try {
+      const rows = [
+        ["Report", "VEXA Financial Summary"],
+        ["Generated", new Date().toISOString()],
+        [""],
+        ["Metric", "Value"],
+        ["Total Income", `${currency} ${metrics.totalIncome}`],
+        ["Total Expenses", `${currency} ${metrics.totalExpense}`],
+        ["Net Profit", `${currency} ${metrics.netProfit}`],
+        ["MRR", `${currency} ${metrics.mrr}`],
+        ["Cash Reserve", `${currency} ${metrics.cashReserve}`],
+        ["Monthly Burn", `${currency} ${metrics.monthlyBurn}`],
+        ["Runway (months)", String(metrics.runwayMonths)],
+        ["Total Sales", `${currency} ${metrics.totalSales}`],
+        ["Inventory Value", `${currency} ${metrics.inventoryValue}`],
+        ["Outstanding Invoices", `${currency} ${metrics.outstandingInvoices}`],
+        [""],
+        ["Date", "Description", "Category", "Amount", "Type", "Status"],
+        ...transactions.map((t) => [t.date, t.merchant, t.category, String(t.amount), t.type, t.status]),
+      ];
+      const csv = rows.map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(",")).join("\n");
+      const blob = new Blob([csv], { type: "text/csv" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `vexa-report-${new Date().toISOString().split("T")[0]}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+      show("Report exported successfully", "success");
+    } catch (err) {
+      console.error(err);
+      show("Failed to export report", "error");
+    } finally {
+      setExporting(false);
+    }
+  };
+
   if (loading || !metrics) return <div className="space-y-6"><div className="h-8 w-32 rounded-lg shimmer" /><div className="h-96 rounded-2xl shimmer" /></div>;
-  if (error) return <ErrorState message="Failed to load report data." onRetry={() => window.location.reload()} />;
+  if (error) return <ErrorState message="Failed to load report data." onRetry={loadData} />;
+
+  // Build cashflow data from transactions
+  const monthlyData: Record<string, { income: number; expense: number }> = {};
+  transactions.forEach((t) => {
+    const month = t.date.slice(0, 7);
+    if (!monthlyData[month]) monthlyData[month] = { income: 0, expense: 0 };
+    if (t.type === "income") monthlyData[month].income += t.amount;
+    else monthlyData[month].expense += Math.abs(t.amount);
+  });
+  const cashflowData = Object.entries(monthlyData)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .slice(-6)
+    .map(([month, data]) => ({
+      month: new Date(month + "-01").toLocaleDateString("en", { month: "short" }),
+      income: data.income,
+      expense: data.expense,
+      net: data.income - data.expense,
+    }));
+
+  // Build expense breakdown from real expenses
+  const categoryTotals: Record<string, number> = {};
+  expenses.forEach((e) => {
+    categoryTotals[e.category] = (categoryTotals[e.category] || 0) + e.amount;
+  });
+  const expenseBreakdown = Object.entries(categoryTotals)
+    .sort(([, a], [, b]) => b - a)
+    .slice(0, 8)
+    .map(([name, value], i) => ({
+      name,
+      value,
+      color: EXPENSE_COLORS[i % EXPENSE_COLORS.length],
+    }));
+
+  const fmt = (v: number) => `${currency} ${v.toLocaleString()}`;
 
   return (
     <div className="space-y-6">
@@ -43,33 +126,41 @@ export default function ReportsPage() {
           <h1 className="font-display text-2xl font-bold tracking-tight text-white">Reports</h1>
           <p className="text-sm text-neutral-400">Financial analytics and business performance.</p>
         </div>
-        <button className="flex items-center gap-1.5 rounded-xl border border-neutral-800 bg-neutral-900/50 px-4 py-2.5 text-sm font-semibold text-neutral-300 backdrop-blur-xl transition hover:text-white">
-          <Download className="h-4 w-4" /><span className="hidden sm:inline">Export</span>
+        <button
+          onClick={handleExport}
+          disabled={exporting}
+          className="flex items-center gap-1.5 rounded-xl border border-neutral-800 bg-neutral-900/50 px-4 py-2.5 text-sm font-semibold text-neutral-300 backdrop-blur-xl transition hover:text-white disabled:opacity-50"
+        >
+          <Download className="h-4 w-4" /><span className="hidden sm:inline">{exporting ? "Exporting..." : "Export CSV"}</span>
         </button>
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard title="Total Income" value={metrics.totalIncome} prefix="KSh " icon={TrendingUp} accent="primary" />
-        <StatCard title="Total Expenses" value={metrics.totalExpense} prefix="KSh " icon={TrendingDown} accent="error" />
-        <StatCard title="Net Profit" value={metrics.netProfit} prefix="KSh " icon={DollarSign} accent="secondary" />
-        <StatCard title="MRR" value={metrics.mrr} prefix="KSh " icon={BarChart3} accent="accent" />
+        <StatCard title="Total Income" value={metrics.totalIncome} prefix={`${currency} `} icon={TrendingUp} accent="primary" />
+        <StatCard title="Total Expenses" value={metrics.totalExpense} prefix={`${currency} `} icon={TrendingDown} accent="error" />
+        <StatCard title="Net Profit" value={metrics.netProfit} prefix={`${currency} `} icon={DollarSign} accent="secondary" />
+        <StatCard title="MRR" value={metrics.mrr} prefix={`${currency} `} icon={BarChart3} accent="accent" />
       </div>
 
       {/* Cash flow bar chart */}
       <div className="rounded-2xl border border-neutral-800/60 bg-neutral-900/30 p-6 backdrop-blur-xl">
         <h3 className="font-display text-base font-semibold text-white border-b border-neutral-800/60 pb-4">Monthly Cash Flow</h3>
         <div className="mt-4 h-80">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={CASHFLOW_DATA} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#1f2937" opacity={0.3} />
-              <XAxis dataKey="month" stroke="#6b7280" fontSize={11} tickLine={false} axisLine={false} dy={10} />
-              <YAxis stroke="#6b7280" fontSize={11} tickLine={false} axisLine={false} tickFormatter={(v) => `KSh ${v / 1000}k`} dx={-10} />
-              <Tooltip contentStyle={{ backgroundColor: "#171717", borderColor: "#262626", borderRadius: "12px", fontSize: "12px", color: "#fff" }} formatter={(value: any) => [`KSh ${Number(value).toLocaleString()}`, ""]} />
-              <Legend verticalAlign="top" height={36} iconType="circle" wrapperStyle={{ fontSize: "11px", color: "#9ca3af" }} />
-              <Bar dataKey="income" name="Income" fill="#10b981" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="expense" name="Expense" fill="#f43f5e" radius={[4, 4, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
+          {cashflowData.length > 0 ? (
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={cashflowData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#1f2937" opacity={0.3} />
+                <XAxis dataKey="month" stroke="#6b7280" fontSize={11} tickLine={false} axisLine={false} dy={10} />
+                <YAxis stroke="#6b7280" fontSize={11} tickLine={false} axisLine={false} tickFormatter={(v) => `${currency} ${v / 1000}k`} dx={-10} />
+                <Tooltip contentStyle={{ backgroundColor: "#171717", borderColor: "#262626", borderRadius: "12px", fontSize: "12px", color: "#fff" }} formatter={(value: any) => [fmt(Number(value)), ""]} />
+                <Legend verticalAlign="top" height={36} iconType="circle" wrapperStyle={{ fontSize: "11px", color: "#9ca3af" }} />
+                <Bar dataKey="income" name="Income" fill="#10b981" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="expense" name="Expense" fill="#f43f5e" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="flex h-full items-center justify-center text-sm text-neutral-500">No transaction data available.</div>
+          )}
         </div>
       </div>
 
@@ -78,21 +169,25 @@ export default function ReportsPage() {
         <div className="rounded-2xl border border-neutral-800/60 bg-neutral-900/30 p-6 backdrop-blur-xl">
           <h3 className="font-display text-base font-semibold text-white border-b border-neutral-800/60 pb-4">Net Profit Trend</h3>
           <div className="mt-4 h-72">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={CASHFLOW_DATA} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="netGlow" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#0ea5e9" stopOpacity={0.2} />
-                    <stop offset="95%" stopColor="#0ea5e9" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#1f2937" opacity={0.3} />
-                <XAxis dataKey="month" stroke="#6b7280" fontSize={11} tickLine={false} axisLine={false} dy={10} />
-                <YAxis stroke="#6b7280" fontSize={11} tickLine={false} axisLine={false} tickFormatter={(v) => `KSh ${v / 1000}k`} dx={-10} />
-                <Tooltip contentStyle={{ backgroundColor: "#171717", borderColor: "#262626", borderRadius: "12px", fontSize: "12px", color: "#fff" }} formatter={(value: any) => [`KSh ${Number(value).toLocaleString()}`, "Net Profit"]} />
-                <Area type="monotone" dataKey="net" stroke="#0ea5e9" strokeWidth={2} fillOpacity={1} fill="url(#netGlow)" />
-              </AreaChart>
-            </ResponsiveContainer>
+            {cashflowData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={cashflowData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="netGlow" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#0ea5e9" stopOpacity={0.2} />
+                      <stop offset="95%" stopColor="#0ea5e9" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#1f2937" opacity={0.3} />
+                  <XAxis dataKey="month" stroke="#6b7280" fontSize={11} tickLine={false} axisLine={false} dy={10} />
+                  <YAxis stroke="#6b7280" fontSize={11} tickLine={false} axisLine={false} tickFormatter={(v) => `${currency} ${v / 1000}k`} dx={-10} />
+                  <Tooltip contentStyle={{ backgroundColor: "#171717", borderColor: "#262626", borderRadius: "12px", fontSize: "12px", color: "#fff" }} formatter={(value: any) => [fmt(Number(value)), "Net Profit"]} />
+                  <Area type="monotone" dataKey="net" stroke="#0ea5e9" strokeWidth={2} fillOpacity={1} fill="url(#netGlow)" />
+                </AreaChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex h-full items-center justify-center text-sm text-neutral-500">No data available.</div>
+            )}
           </div>
         </div>
 
@@ -100,15 +195,19 @@ export default function ReportsPage() {
         <div className="rounded-2xl border border-neutral-800/60 bg-neutral-900/30 p-6 backdrop-blur-xl">
           <h3 className="font-display text-base font-semibold text-white border-b border-neutral-800/60 pb-4">Expense Breakdown</h3>
           <div className="mt-4 h-72">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie data={EXPENSE_BREAKDOWN} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={60} outerRadius={100} paddingAngle={2}>
-                  {EXPENSE_BREAKDOWN.map((entry, i) => <Cell key={i} fill={entry.color} />)}
-                </Pie>
-                <Tooltip contentStyle={{ backgroundColor: "#171717", borderColor: "#262626", borderRadius: "12px", fontSize: "12px", color: "#fff" }} formatter={(value: any) => `KSh ${Number(value).toLocaleString()}`} />
-                <Legend verticalAlign="bottom" height={36} iconType="circle" wrapperStyle={{ fontSize: "11px", color: "#9ca3af" }} />
-              </PieChart>
-            </ResponsiveContainer>
+            {expenseBreakdown.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie data={expenseBreakdown} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={60} outerRadius={100} paddingAngle={2}>
+                    {expenseBreakdown.map((entry, i) => <Cell key={i} fill={entry.color} />)}
+                  </Pie>
+                  <Tooltip contentStyle={{ backgroundColor: "#171717", borderColor: "#262626", borderRadius: "12px", fontSize: "12px", color: "#fff" }} formatter={(value: any) => fmt(Number(value))} />
+                  <Legend verticalAlign="bottom" height={36} iconType="circle" wrapperStyle={{ fontSize: "11px", color: "#9ca3af" }} />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex h-full items-center justify-center text-sm text-neutral-500">No expense data available.</div>
+            )}
           </div>
         </div>
       </div>
@@ -120,10 +219,10 @@ export default function ReportsPage() {
           <h3 className="font-display text-base font-semibold text-white">AI Financial Summary</h3>
         </div>
         <p className="text-sm text-neutral-300 leading-relaxed">
-          Your business is performing well. Revenue grew 25% month-over-month, driven by strong retainer income.
-          However, marketing expenses increased 18% — monitor your return on ad spend. Your cash runway is healthy
-          at {metrics.runwayMonths} months. Consider collecting KSh {metrics.outstandingInvoices.toLocaleString()} in
-          outstanding invoices to further strengthen your position.
+          Your business has a net profit of {fmt(metrics.netProfit)} with a cash reserve of {fmt(metrics.cashReserve)}.
+          Your monthly burn rate is {fmt(metrics.monthlyBurn)}, giving you a runway of {metrics.runwayMonths} months.
+          You have {fmt(metrics.outstandingInvoices)} in outstanding invoices — collecting these will strengthen your position.
+          Your inventory is valued at {fmt(metrics.inventoryValue)} and total sales reached {fmt(metrics.totalSales)}.
         </p>
       </div>
     </div>

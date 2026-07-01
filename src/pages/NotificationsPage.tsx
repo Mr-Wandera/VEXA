@@ -3,12 +3,20 @@ import { motion } from "motion/react";
 import { Bell, CircleAlert as AlertCircle, CircleCheck as CheckCircle, Info, Sparkles, Check } from "lucide-react";
 import { apiClient } from "../lib/apiClient";
 import { Notification } from "../types";
-import PageHeader from "../components/ui/PageHeader";
 import ErrorState from "../components/ui/ErrorState";
 import { useToast } from "../components/ui/Toast";
+import { useRouter } from "../lib/router";
+
+const ACTION_ROUTES: Record<string, string> = {
+  remind_overdue_inv_104: "/app/invoices",
+  "remind_overdue_inv-104": "/app/invoices",
+  reorder_p4: "/app/inventory",
+  analyze_marketing: "/app/reports",
+};
 
 export default function NotificationsPage() {
   const { show } = useToast();
+  const { navigate } = useRouter();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -35,15 +43,26 @@ export default function NotificationsPage() {
 
   const handleMarkAllRead = async () => {
     const unread = notifications.filter((n) => !n.read);
-    for (const n of unread) {
-      try { await apiClient.markNotificationRead(n.id); } catch (err) { console.error(err); }
-    }
+    await Promise.all(
+      unread.map((n) => apiClient.markNotificationRead(n.id).catch((err) => console.error(err)))
+    );
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
     show("All notifications marked as read", "success");
   };
 
+  const handleActionClick = (notif: Notification) => {
+    if (!notif.read) handleMarkRead(notif.id);
+    const route = notif.actionCode ? ACTION_ROUTES[notif.actionCode] : undefined;
+    if (route) {
+      navigate(route);
+    } else {
+      navigate("/app/dashboard");
+    }
+  };
+
   const filtered = notifications.filter((n) => filter === "all" || !n.read);
   const unreadCount = notifications.filter((n) => !n.read).length;
+  const totalCount = notifications.length;
 
   const getIcon = (type: Notification["type"]) => {
     switch (type) {
@@ -65,6 +84,10 @@ export default function NotificationsPage() {
 
   if (loading) return <div className="space-y-6"><div className="h-8 w-32 rounded-lg shimmer" /><div className="space-y-3">{Array.from({ length: 4 }).map((_, i) => <div key={i} className="h-20 rounded-2xl shimmer" />)}</div></div>;
   if (error) return <ErrorState message="Failed to load notifications." onRetry={loadData} />;
+
+  const emptyMessage = filter === "unread"
+    ? "You're all caught up! No unread notifications."
+    : "No notifications yet. Activity from your business will appear here.";
 
   return (
     <div className="space-y-6">
@@ -95,7 +118,7 @@ export default function NotificationsPage() {
             <div className="mb-3 rounded-2xl bg-neutral-900/50 p-4">
               <Bell className="h-8 w-8 text-neutral-600" />
             </div>
-            <p className="text-sm text-neutral-400">You're all caught up. No unread notifications.</p>
+            <p className="text-sm text-neutral-400">{emptyMessage}</p>
           </div>
         ) : (
           filtered.map((notif, i) => {
@@ -120,13 +143,20 @@ export default function NotificationsPage() {
                   </div>
                   <p className="mt-1 text-sm text-neutral-400">{notif.description}</p>
                   {notif.actionText && (
-                    <button className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-primary-400 hover:text-primary-300 transition">
+                    <button
+                      onClick={() => handleActionClick(notif)}
+                      className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-primary-400 hover:text-primary-300 transition"
+                    >
                       {notif.actionText} →
                     </button>
                   )}
                 </div>
                 {!notif.read && (
-                  <button onClick={() => handleMarkRead(notif.id)} aria-label="Mark as read" className="rounded-lg p-2 text-neutral-500 opacity-0 transition hover:text-white group-hover:opacity-100">
+                  <button
+                    onClick={() => handleMarkRead(notif.id)}
+                    aria-label="Mark as read"
+                    className="rounded-lg p-2 text-neutral-500 transition hover:text-white md:opacity-0 md:group-hover:opacity-100"
+                  >
                     <Check className="h-4 w-4" />
                   </button>
                 )}

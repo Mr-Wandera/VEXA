@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { X, Sparkles, CircleAlert as AlertCircle, CirclePlus as PlusCircle, Check } from "lucide-react";
+import { X, Sparkles, CirclePlus as PlusCircle, Check, CircleAlert as AlertCircle } from "lucide-react";
 
 interface AddTransactionModalProps {
   isOpen: boolean;
@@ -33,17 +33,32 @@ export default function AddTransactionModal({
   const [status, setStatus] = useState<'cleared' | 'pending'>('cleared');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [done, setDone] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (isOpen) {
+      setError("");
+    }
+  }, [isOpen]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!merchant || !amount || isNaN(Number(amount))) return;
+    setError("");
+
+    if (!merchant.trim()) {
+      setError("Please enter a merchant or source name.");
+      return;
+    }
+    if (!amount || isNaN(Number(amount)) || Number(amount) <= 0) {
+      setError("Please enter a valid amount greater than zero.");
+      return;
+    }
 
     setIsAnalyzing(true);
 
     try {
-      // Simulate/Trigger live AI classification
       await onAdd({
-        merchant,
+        merchant: merchant.trim(),
         category,
         amount: type === 'expense' ? -Math.abs(Number(amount)) : Math.abs(Number(amount)),
         type,
@@ -53,7 +68,6 @@ export default function AddTransactionModal({
 
       setDone(true);
       setTimeout(() => {
-        // Reset states
         setMerchant("");
         setAmount("");
         setIsAnalyzing(false);
@@ -62,6 +76,7 @@ export default function AddTransactionModal({
       }, 1200);
     } catch (err) {
       console.error(err);
+      setError("Failed to record transaction. Please try again.");
       setIsAnalyzing(false);
     }
   };
@@ -136,6 +151,18 @@ export default function AddTransactionModal({
             ) : (
               /* Form */
               <form onSubmit={handleSubmit} className="mt-5 space-y-4">
+                {/* Error message */}
+                {error && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="flex items-center gap-2 rounded-xl border border-error-500/30 bg-error-500/10 px-4 py-3 text-sm text-error-400"
+                  >
+                    <AlertCircle className="h-4 w-4 shrink-0" />
+                    {error}
+                  </motion.div>
+                )}
+
                 {/* Type Switcher */}
                 <div className="flex rounded-xl bg-neutral-950 p-1">
                   <button
@@ -165,11 +192,12 @@ export default function AddTransactionModal({
                 <div className="grid grid-cols-2 gap-4">
                   {/* Amount */}
                   <div>
-                    <label className="block text-xs font-medium text-neutral-400 mb-1.5 font-sans">Amount (USD)</label>
+                    <label className="block text-xs font-medium text-neutral-400 mb-1.5 font-sans">Amount</label>
                     <input
                       required
                       type="number"
                       step="0.01"
+                      min="0.01"
                       placeholder="0.00"
                       value={amount}
                       onChange={(e) => setAmount(e.target.value)}
@@ -183,6 +211,7 @@ export default function AddTransactionModal({
                     <input
                       required
                       type="date"
+                      max={new Date().toISOString().split('T')[0]}
                       value={date}
                       onChange={(e) => setDate(e.target.value)}
                       className="w-full rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-3 text-sm text-white focus:outline-none focus:border-primary-500 transition font-mono"
@@ -223,7 +252,7 @@ export default function AddTransactionModal({
                     <label className="block text-xs font-medium text-neutral-400 mb-1.5 font-sans">Reconciliation Status</label>
                     <select
                       value={status}
-                      onChange={(e) => setStatus(e.target.value as any)}
+                      onChange={(e) => setStatus(e.target.value as 'cleared' | 'pending')}
                       className="w-full rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-3 text-sm text-white focus:outline-none focus:border-primary-500 transition font-sans"
                     >
                       <option value="cleared">Cleared (Instantly Settled)</option>

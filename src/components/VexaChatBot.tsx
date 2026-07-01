@@ -1,13 +1,13 @@
-import { useState, useRef, useEffect } from "react";
-import { motion } from "motion/react";
-import { Send, Sparkles, RefreshCw, X } from "lucide-react";
+import { useState, useRef, useEffect, useCallback } from "react";
+import { Send, Sparkles, RefreshCw, X, RotateCcw } from "lucide-react";
 import Markdown from "react-markdown";
 import { ChatMessage } from "../types.ts";
+import { apiClient } from "../lib/apiClient";
 
 interface VexaChatBotProps {
   initialQuery?: string;
   onClose?: () => void;
-  isFloating?: boolean;
+  variant?: "floating" | "embedded";
 }
 
 const QUICK_PROMPTS = [
@@ -17,28 +17,22 @@ const QUICK_PROMPTS = [
   "Forecast business performance for Q3",
 ];
 
-export default function VexaChatBot({ initialQuery, onClose }: VexaChatBotProps) {
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    {
-      id: "welcome",
-      role: "model",
-      text: "### Welcome to VEXA AI\n\nI'm synchronized with your business ledger. I can project cash flow, analyze runway health, design payment collection templates, and draft tax-deductible audits.\n\n*What strategic insight do you need today?*",
-      timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-    },
-  ]);
+const WELCOME_MESSAGE: ChatMessage = {
+  id: "welcome",
+  role: "model",
+  text: "### Welcome to VEXA AI\n\nI'm synchronized with your business ledger. I can project cash flow, analyze runway health, design payment collection templates, and draft tax-deductible audits.\n\n*What strategic insight do you need today?*",
+  timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+};
+
+export default function VexaChatBot({ initialQuery, onClose, variant = "floating" }: VexaChatBotProps) {
+  const [messages, setMessages] = useState<ChatMessage[]>([WELCOME_MESSAGE]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showPrompts, setShowPrompts] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const sentQueryRef = useRef<string | null>(null);
 
-  useEffect(() => {
-    if (initialQuery) handleSendMessage(initialQuery);
-  }, [initialQuery]);
-
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, loading]);
-
-  const handleSendMessage = async (textToSend: string) => {
+  const handleSendMessage = useCallback(async (textToSend: string) => {
     if (!textToSend.trim() || loading) return;
 
     const userMsg: ChatMessage = {
@@ -48,28 +42,26 @@ export default function VexaChatBot({ initialQuery, onClose }: VexaChatBotProps)
       timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
     };
 
-    setMessages((prev) => [...prev, userMsg]);
+    const currentMessages = [...messages, userMsg];
+    setMessages(currentMessages);
     setInput("");
     setLoading(true);
+    setShowPrompts(false);
 
     try {
-      const historyPayload = messages.map((msg) => ({
-        role: msg.role,
-        parts: [{ text: msg.text }],
-      }));
+      const historyPayload = currentMessages
+        .filter((msg) => msg.id !== "welcome")
+        .map((msg) => ({
+          role: msg.role,
+          parts: [{ text: msg.text }],
+        }));
 
-      const res = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: textToSend, history: historyPayload }),
-      });
-
-      const data = await res.json();
+      const data = await apiClient.chat(textToSend, historyPayload);
 
       const modelMsg: ChatMessage = {
         id: `ai-${Date.now()}`,
         role: "model",
-        text: data.reply || "I apologize. I suffered a connection error. Please try again.",
+        text: data.reply || "I apologize. I encountered an error processing your request. Please try again.",
         timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
       };
 
@@ -79,17 +71,45 @@ export default function VexaChatBot({ initialQuery, onClose }: VexaChatBotProps)
       const errMsg: ChatMessage = {
         id: `err-${Date.now()}`,
         role: "model",
-        text: "**Connection Fault:** Unable to connect to the VEXA API server. Reconnecting...",
+        text: "**Connection Error:** Unable to reach the VEXA AI server. Please check your connection and try again.",
         timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
       };
       setMessages((prev) => [...prev, errMsg]);
     } finally {
       setLoading(false);
     }
+  }, [messages, loading]);
+
+  useEffect(() => {
+    if (initialQuery && initialQuery !== sentQueryRef.current) {
+      sentQueryRef.current = initialQuery;
+      handleSendMessage(initialQuery);
+    }
+  }, [initialQuery, handleSendMessage]);
+
+  useEffect(() => {
+    const handleChatQuery = (e: Event) => {
+      const query = (e as CustomEvent).detail;
+      if (query) handleSendMessage(query);
+    };
+    window.addEventListener("vexa-chat-query", handleChatQuery);
+    return () => window.removeEventListener("vexa-chat-query", handleChatQuery);
+  }, [handleSendMessage]);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, loading]);
+
+  const handleClearConversation = () => {
+    setMessages([WELCOME_MESSAGE]);
+    setShowPrompts(true);
+    setInput("");
   };
 
+  const containerHeight = variant === "embedded" ? "h-[calc(100vh-220px)] min-h-[400px]" : "h-[calc(100vh-140px)] min-h-[500px]";
+
   return (
-    <div className="flex flex-col h-[calc(100vh-140px)] min-h-[500px] rounded-2xl border border-neutral-800/60 bg-neutral-900/30 backdrop-blur-xl w-full overflow-hidden">
+    <div className={`flex flex-col ${containerHeight} rounded-2xl border border-neutral-800/60 bg-neutral-900/30 backdrop-blur-xl w-full overflow-hidden`}>
       {/* Header */}
       <div className="flex items-center justify-between border-b border-neutral-800/60 px-6 py-4 bg-neutral-950/40">
         <div className="flex items-center gap-2.5">
@@ -104,11 +124,22 @@ export default function VexaChatBot({ initialQuery, onClose }: VexaChatBotProps)
             </span>
           </div>
         </div>
-        {onClose && (
-          <button onClick={onClose} className="rounded-lg border border-neutral-800 bg-neutral-950 p-1.5 text-neutral-400 hover:text-white transition">
-            <X className="h-4 w-4" />
-          </button>
-        )}
+        <div className="flex items-center gap-2">
+          {messages.length > 1 && (
+            <button
+              onClick={handleClearConversation}
+              className="flex items-center gap-1.5 rounded-lg border border-neutral-800 bg-neutral-950 px-2.5 py-1.5 text-xs font-medium text-neutral-400 transition hover:text-white"
+            >
+              <RotateCcw className="h-3 w-3" />
+              <span className="hidden sm:inline">New Chat</span>
+            </button>
+          )}
+          {onClose && (
+            <button onClick={onClose} className="rounded-lg border border-neutral-800 bg-neutral-950 p-1.5 text-neutral-400 hover:text-white transition">
+              <X className="h-4 w-4" />
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Messages */}
@@ -162,7 +193,7 @@ export default function VexaChatBot({ initialQuery, onClose }: VexaChatBotProps)
       </div>
 
       {/* Quick prompts */}
-      {messages.length === 1 && (
+      {showPrompts && (
         <div className="px-6 pb-3">
           <span className="font-mono text-[10px] text-neutral-500 uppercase tracking-wider block mb-2">Suggested Inquiries</span>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">

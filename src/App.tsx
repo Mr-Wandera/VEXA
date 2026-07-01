@@ -1,13 +1,13 @@
-import { useState, useEffect, lazy, Suspense } from "react";
+import { useState, useEffect, lazy, Suspense, useCallback } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Sparkles } from "lucide-react";
 import { RouterProvider, useRouter, matchRoute } from "./lib/router";
-import { ToastProvider } from "./components/ui/Toast";
+import { ToastProvider, useToast } from "./components/ui/Toast";
 import Sidebar from "./components/Sidebar";
 import Header from "./components/Header";
 import PageTransition from "./components/ui/PageTransition";
 import AddTransactionModal from "./components/AddTransactionModal";
 import VexaChatBot from "./components/VexaChatBot";
+import NotFound from "./components/ui/NotFound";
 import { apiClient } from "./lib/apiClient";
 
 // Eager-load landing + auth (critical path), lazy-load the rest
@@ -43,14 +43,18 @@ function PageLoader() {
 
 function AppContent() {
   const { path } = useRouter();
+  const { show } = useToast();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [quickAddOpen, setQuickAddOpen] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
   const [chatQuery, setChatQuery] = useState("");
   const [notificationCount, setNotificationCount] = useState(0);
   const [businessName, setBusinessName] = useState("Your Business");
+  const [refreshKey, setRefreshKey] = useState(0);
 
-  // Fetch notification count and business name on mount
+  const triggerRefresh = useCallback(() => setRefreshKey((k) => k + 1), []);
+
+  // Fetch notification count and business name when in app
   useEffect(() => {
     const loadHeaderData = async () => {
       try {
@@ -65,13 +69,29 @@ function AppContent() {
       }
     };
     if (path.startsWith("/app")) loadHeaderData();
-  }, [path.startsWith("/app")]);
+  }, [path.startsWith("/app"), refreshKey]);
+
+  const handleAddTransaction = useCallback(
+    async (tx: {
+      merchant: string;
+      category: string;
+      amount: number;
+      type: 'income' | 'expense';
+      date: string;
+      status: 'cleared' | 'pending';
+    }) => {
+      await apiClient.addTransaction(tx);
+      triggerRefresh();
+      show("Transaction recorded successfully", "success");
+    },
+    [triggerRefresh, show]
+  );
 
   const isLanding = path === "/" || path === "";
   const isAuth = path === "/auth";
 
   if (isLanding) return <LandingPage />;
-  if (isAuth) return <AuthPage onAuthed={() => {}} />;
+  if (isAuth) return <AuthPage onAuthed={triggerRefresh} />;
 
   if (path.startsWith("/app")) {
     return (
@@ -90,7 +110,7 @@ function AppContent() {
               <AnimatePresence mode="wait">
                 <PageTransition key={path}>
                   <Suspense fallback={<PageLoader />}>
-                    {renderAppPage(path, { setChatOpen, setChatQuery })}
+                    {renderAppPage(path, { setChatOpen, setChatQuery, triggerRefresh, refreshKey })}
                   </Suspense>
                 </PageTransition>
               </AnimatePresence>
@@ -98,7 +118,11 @@ function AppContent() {
           </div>
         </div>
 
-        <AddTransactionModal isOpen={quickAddOpen} onClose={() => setQuickAddOpen(false)} onAdd={async () => {}} />
+        <AddTransactionModal
+          isOpen={quickAddOpen}
+          onClose={() => setQuickAddOpen(false)}
+          onAdd={handleAddTransaction}
+        />
 
         <AnimatePresence>
           {chatOpen && (
@@ -121,9 +145,9 @@ function AppContent() {
 
 function renderAppPage(
   path: string,
-  ctx: { setChatOpen: (v: boolean) => void; setChatQuery: (v: string) => void }
+  ctx: { setChatOpen: (v: boolean) => void; setChatQuery: (v: string) => void; triggerRefresh: () => void; refreshKey: number }
 ) {
-  if (matchRoute(path, "/app/dashboard")) return <DashboardPage onAskAI={(q) => { ctx.setChatQuery(q); ctx.setChatOpen(true); }} />;
+  if (matchRoute(path, "/app/dashboard")) return <DashboardPage onAskAI={(q) => { ctx.setChatQuery(q); ctx.setChatOpen(true); }} refreshKey={ctx.refreshKey} />;
   if (matchRoute(path, "/app/sales")) return <SalesPage />;
   if (matchRoute(path, "/app/inventory")) return <InventoryPage />;
   if (matchRoute(path, "/app/expenses")) return <ExpensesPage />;
@@ -136,7 +160,7 @@ function renderAppPage(
   if (matchRoute(path, "/app/timeline")) return <TimelinePage />;
   if (matchRoute(path, "/app/settings")) return <SettingsPage />;
   if (matchRoute(path, "/app/ai")) return <AIPage />;
-  return <DashboardPage onAskAI={() => {}} />;
+  return <NotFound />;
 }
 
 export default function App() {

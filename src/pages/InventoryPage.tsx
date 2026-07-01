@@ -8,6 +8,7 @@ import { useToast } from "../components/ui/Toast";
 import ErrorState from "../components/ui/ErrorState";
 import Modal from "../components/ui/Modal";
 import PageHeader from "../components/ui/PageHeader";
+import { useCurrency } from "../lib/useCurrency";
 
 export default function InventoryPage() {
   const { show } = useToast();
@@ -27,6 +28,7 @@ export default function InventoryPage() {
   const [reorderLevel, setReorderLevel] = useState("10");
   const [unit, setUnit] = useState("pcs");
   const [submitting, setSubmitting] = useState(false);
+  const currency = useCurrency();
 
   useEffect(() => {
     loadData();
@@ -48,6 +50,11 @@ export default function InventoryPage() {
   const handleAddProduct = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
+    if (!name || !sku || !price || Number(price) <= 0) {
+      show("Please fill in all required fields with valid values.", "error");
+      setSubmitting(false);
+      return;
+    }
     try {
       const product = await apiClient.addProduct({
         name, sku, category,
@@ -104,7 +111,7 @@ export default function InventoryPage() {
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard title="Total Products" value={products.length} icon={Package} accent="primary" />
-        <StatCard title="Inventory Value" value={totalValue} prefix="KSh " icon={DollarSign} accent="secondary" />
+        <StatCard title="Inventory Value" value={totalValue} prefix={`${currency} `} icon={DollarSign} accent="secondary" />
         <StatCard title="Low Stock" value={lowStockCount} icon={AlertTriangle} accent="warning" />
         <StatCard title="Out of Stock" value={outOfStockCount} icon={Boxes} accent="error" />
       </div>
@@ -158,7 +165,7 @@ export default function InventoryPage() {
 
                   <div className="mt-3 flex items-end justify-between">
                     <div>
-                      <span className="font-mono text-lg font-semibold text-white">KSh {product.price.toLocaleString()}</span>
+                      <span className="font-mono text-lg font-semibold text-white">{currency} {product.price.toLocaleString()}</span>
                       <span className="ml-1 text-xs text-neutral-500">/{product.unit}</span>
                     </div>
                     <div className="text-right">
@@ -202,11 +209,11 @@ export default function InventoryPage() {
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-medium text-neutral-400 mb-1.5">Selling Price (KSh)</label>
+              <label className="block text-xs font-medium text-neutral-400 mb-1.5">Selling Price ({currency})</label>
               <input required type="number" min="0" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="2500" className="w-full rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-3 text-sm text-white focus:border-primary-500 focus:outline-none font-mono" />
             </div>
             <div>
-              <label className="block text-xs font-medium text-neutral-400 mb-1.5">Cost Price (KSh)</label>
+              <label className="block text-xs font-medium text-neutral-400 mb-1.5">Cost Price ({currency})</label>
               <input required type="number" min="0" value={cost} onChange={(e) => setCost(e.target.value)} placeholder="1200" className="w-full rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-3 text-sm text-white focus:border-primary-500 focus:outline-none font-mono" />
             </div>
           </div>

@@ -8,6 +8,7 @@ import PageHeader from "../components/ui/PageHeader";
 import ErrorState from "../components/ui/ErrorState";
 import Modal from "../components/ui/Modal";
 import { useToast } from "../components/ui/Toast";
+import { useCurrency } from "../lib/useCurrency";
 
 export default function SalesPage() {
   const { show } = useToast();
@@ -23,6 +24,7 @@ export default function SalesPage() {
   const [customerName, setCustomerName] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<Sale["paymentMethod"]>("mpesa");
   const [submitting, setSubmitting] = useState(false);
+  const currency = useCurrency();
 
   useEffect(() => { loadData(); }, []);
 
@@ -47,10 +49,14 @@ export default function SalesPage() {
       show("Please select a product and quantity.", "error");
       return;
     }
+    const qty = Number(quantity);
+    if (product.stock < 999 && qty > product.stock) {
+      show(`Insufficient stock. Only ${product.stock} ${product.unit} available.`, "error");
+      return;
+    }
 
     setSubmitting(true);
     try {
-      const qty = Number(quantity);
       const sale = await apiClient.addSale({
         date: new Date().toISOString().split("T")[0],
         productId: product.id,
@@ -63,11 +69,12 @@ export default function SalesPage() {
         status: "completed",
       });
       setSales((prev) => [sale, ...prev]);
+      setProducts((prev) => prev.map((p) => p.id === product.id && p.stock < 999 ? { ...p, stock: Math.max(0, p.stock - qty) } : p));
       setSelectedProduct("");
       setQuantity("1");
       setCustomerName("");
       setShowAdd(false);
-      show(`Sale recorded: KSh ${(qty * product.price).toLocaleString()}`, "success");
+      show(`Sale recorded: ${currency} ${(qty * product.price).toLocaleString()}`, "success");
     } catch (err) {
       console.error(err);
       show("Failed to record sale. Please try again.", "error");
@@ -93,8 +100,8 @@ export default function SalesPage() {
       />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <StatCard title="Total Revenue" value={totalRevenue} prefix="KSh " icon={DollarSign} accent="primary" />
-        <StatCard title="Today's Sales" value={todayRevenue} prefix="KSh " icon={TrendingUp} accent="secondary" />
+        <StatCard title="Total Revenue" value={totalRevenue} prefix={`${currency} `} icon={DollarSign} accent="primary" />
+        <StatCard title="Today's Sales" value={todayRevenue} prefix={`${currency} `} icon={TrendingUp} accent="secondary" />
         <StatCard title="Total Transactions" value={sales.length} icon={ShoppingCart} accent="accent" />
       </div>
 
@@ -150,8 +157,8 @@ export default function SalesPage() {
                       <td className="py-3 px-4 text-sm font-medium text-white">{sale.productName}</td>
                       <td className="py-3 px-4 text-sm text-neutral-300">{sale.customerName}</td>
                       <td className="py-3 px-4 text-center font-mono text-sm text-neutral-300">{sale.quantity}</td>
-                      <td className="py-3 px-4 text-right font-mono text-sm text-neutral-300">KSh {sale.unitPrice.toLocaleString()}</td>
-                      <td className="py-3 px-4 text-right font-mono text-sm font-semibold text-white">KSh {sale.totalAmount.toLocaleString()}</td>
+                      <td className="py-3 px-4 text-right font-mono text-sm text-neutral-300">{currency} {sale.unitPrice.toLocaleString()}</td>
+                      <td className="py-3 px-4 text-right font-mono text-sm font-semibold text-white">{currency} {sale.totalAmount.toLocaleString()}</td>
                       <td className="py-3 px-4 text-center">
                         <span className="inline-flex rounded-full bg-neutral-800 px-2 py-0.5 text-[10px] font-semibold uppercase text-neutral-300">
                           {sale.paymentMethod}
@@ -181,7 +188,7 @@ export default function SalesPage() {
                       <p className="text-sm font-medium text-white">{sale.productName}</p>
                       <p className="text-xs text-neutral-500">{sale.customerName} · {sale.date}</p>
                     </div>
-                    <p className="font-mono text-sm font-semibold text-white">KSh {sale.totalAmount.toLocaleString()}</p>
+                    <p className="font-mono text-sm font-semibold text-white">{currency} {sale.totalAmount.toLocaleString()}</p>
                   </div>
                   <div className="mt-2 flex items-center gap-2 text-xs">
                     <span className="rounded-full bg-neutral-800 px-2 py-0.5 text-[10px] font-semibold uppercase text-neutral-300">{sale.paymentMethod}</span>
@@ -190,7 +197,7 @@ export default function SalesPage() {
                         : sale.status === "pending" ? "bg-warning-500/10 text-warning-400"
                         : "bg-error-500/10 text-error-400"
                     }`}>{sale.status}</span>
-                    <span className="text-neutral-500">{sale.quantity}x @ KSh {sale.unitPrice.toLocaleString()}</span>
+                    <span className="text-neutral-500">{sale.quantity}x @ {currency} {sale.unitPrice.toLocaleString()}</span>
                   </div>
                 </div>
               ))}
@@ -212,7 +219,7 @@ export default function SalesPage() {
               <option value="">Select a product...</option>
               {products.map((p) => (
                 <option key={p.id} value={p.id}>
-                  {p.name} — KSh {p.price.toLocaleString()} ({p.stock} in stock)
+                  {p.name} — {currency} {p.price.toLocaleString()} ({p.stock} in stock)
                 </option>
               ))}
             </select>
@@ -248,7 +255,7 @@ export default function SalesPage() {
               <div className="flex items-center justify-between">
                 <span className="text-xs text-neutral-400">Total Amount</span>
                 <span className="font-mono text-lg font-semibold text-primary-400">
-                  KSh {(Number(quantity) * (products.find((p) => p.id === selectedProduct)?.price || 0)).toLocaleString()}
+                  {currency} {(Number(quantity) * (products.find((p) => p.id === selectedProduct)?.price || 0)).toLocaleString()}
                 </span>
               </div>
             </div>

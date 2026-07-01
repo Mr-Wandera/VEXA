@@ -27,8 +27,16 @@ export default function AuthPage({ onAuthed }: AuthPageProps) {
       setError("Please enter your email and password.");
       return;
     }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setError("Please enter a valid email address.");
+      return;
+    }
     if (password.length < 6) {
       setError("Password must be at least 6 characters.");
+      return;
+    }
+    if (mode === "signup" && !name.trim()) {
+      setError("Please enter your full name.");
       return;
     }
 

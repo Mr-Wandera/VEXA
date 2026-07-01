@@ -8,6 +8,7 @@ import { useToast } from "../components/ui/Toast";
 import ErrorState from "../components/ui/ErrorState";
 import Modal from "../components/ui/Modal";
 import PageHeader from "../components/ui/PageHeader";
+import { useCurrency } from "../lib/useCurrency";
 
 const CATEGORIES = [
   "SaaS Infrastructure", "Cloud Servers", "Developer Tools", "Design Software",
@@ -30,6 +31,7 @@ export default function ExpensesPage() {
   const [paymentMethod, setPaymentMethod] = useState<Expense["paymentMethod"]>("card");
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
   const [submitting, setSubmitting] = useState(false);
+  const currency = useCurrency();
 
   useEffect(() => { loadData(); }, []);
 
@@ -48,6 +50,11 @@ export default function ExpensesPage() {
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
+    if (!description || !amount || Number(amount) <= 0) {
+      show("Please enter a description and valid amount.", "error");
+      setSubmitting(false);
+      return;
+    }
     try {
       const exp = await apiClient.addExpense({
         description, category, amount: Number(amount), vendor,
@@ -99,8 +106,8 @@ export default function ExpensesPage() {
       />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <StatCard title="Total Expenses" value={totalExpenses} prefix="KSh " icon={DollarSign} accent="error" />
-        <StatCard title="This Month" value={monthTotal} prefix="KSh " icon={TrendingDown} accent="warning" />
+        <StatCard title="Total Expenses" value={totalExpenses} prefix={`${currency} `} icon={DollarSign} accent="error" />
+        <StatCard title="This Month" value={monthTotal} prefix={`${currency} `} icon={TrendingDown} accent="warning" />
         <StatCard title="Transactions" value={expenses.length} icon={Receipt} accent="secondary" />
       </div>
 
@@ -135,7 +142,7 @@ export default function ExpensesPage() {
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="font-mono text-sm font-semibold text-white">KSh {exp.amount.toLocaleString()}</p>
+                    <p className="font-mono text-sm font-semibold text-white">{currency} {exp.amount.toLocaleString()}</p>
                     <p className="text-[10px] uppercase text-neutral-500">{exp.paymentMethod}</p>
                   </div>
                 </motion.div>
@@ -149,12 +156,12 @@ export default function ExpensesPage() {
           <h3 className="font-display text-base font-semibold text-white border-b border-neutral-800/60 pb-4">Top Categories</h3>
           <div className="mt-4 space-y-3">
             {topCategories.map(([cat, amount], i) => {
-              const pct = (amount / totalExpenses) * 100;
+              const pct = totalExpenses > 0 ? (amount / totalExpenses) * 100 : 0;
               return (
                 <div key={cat}>
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-neutral-300">{cat}</span>
-                    <span className="font-mono text-neutral-400">KSh {amount.toLocaleString()}</span>
+                    <span className="font-mono text-neutral-400">{currency} {amount.toLocaleString()}</span>
                   </div>
                   <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-neutral-800">
                     <motion.div
@@ -181,7 +188,7 @@ export default function ExpensesPage() {
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-medium text-neutral-400 mb-1.5">Amount (KSh)</label>
+              <label className="block text-xs font-medium text-neutral-400 mb-1.5">Amount ({currency})</label>
               <input required type="number" min="0" step="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0.00" className="w-full rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-3 text-sm text-white focus:border-primary-500 focus:outline-none font-mono" />
             </div>
             <div>

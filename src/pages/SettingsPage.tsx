@@ -20,8 +20,8 @@ export default function SettingsPage() {
   const loadData = async () => {
     setError(false);
     try {
-      const { profile } = await apiClient.getMetrics();
-      setProfile(profile);
+      const p = await apiClient.getProfile();
+      setProfile(p);
     } catch (err) {
       console.error(err);
       setError(true);
@@ -33,6 +33,14 @@ export default function SettingsPage() {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!profile) return;
+    if (profile.taxRate < 0 || profile.taxRate > 100) {
+      show("Tax rate must be between 0 and 100.", "error");
+      return;
+    }
+    if (profile.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(profile.email)) {
+      show("Please enter a valid email address.", "error");
+      return;
+    }
     setSaving(true);
     try {
       await apiClient.updateProfile(profile);
@@ -143,8 +151,27 @@ export default function SettingsPage() {
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <span className="h-2 w-2 rounded-full bg-success-400 animate-pulse" />
-              <span className="font-mono text-[10px] uppercase font-semibold text-success-400">Connected</span>
+              {profile.stripeConnected ? (
+                <>
+                  <span className="h-2 w-2 rounded-full bg-success-400 animate-pulse" />
+                  <span className="font-mono text-[10px] uppercase font-semibold text-success-400">Connected</span>
+                  <button
+                    type="button"
+                    onClick={() => { setProfile({ ...profile, stripeConnected: false }); show("Stripe integration disconnected.", "info"); }}
+                    className="ml-2 rounded-lg border border-neutral-800 bg-neutral-950 px-3 py-1 text-xs font-semibold text-neutral-400 hover:text-white transition"
+                  >Disconnect</button>
+                </>
+              ) : (
+                <>
+                  <span className="h-2 w-2 rounded-full bg-neutral-600" />
+                  <span className="font-mono text-[10px] uppercase font-semibold text-neutral-500">Not Connected</span>
+                  <button
+                    type="button"
+                    onClick={() => { setProfile({ ...profile, stripeConnected: true }); show("Stripe integration connected.", "success"); }}
+                    className="ml-2 rounded-lg bg-primary-600 px-3 py-1 text-xs font-semibold text-white hover:bg-primary-500 transition"
+                  >Connect</button>
+                </>
+              )}
             </div>
           </div>
         </div>
