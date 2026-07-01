@@ -71,15 +71,15 @@ export default function TimelinePage() {
                 transition={{ delay: i * 0.05 }}
                 className="relative flex gap-4 pl-0"
               >
-                <div className={`relative z-10 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${COLOR_MAP[event.type]}`}>
+                <div className={`relative z-10 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${COLOR_MAP[event.type] || "bg-neutral-700 text-neutral-400"}`}>
                   <Icon className="h-5 w-5" />
                 </div>
                 <div className="flex-1 rounded-2xl border border-white/[0.06] bg-white/[0.025] p-4 backdrop-blur-xl">
                   <div className="flex items-center justify-between">
                     <h4 className="font-display text-sm font-semibold text-white">{event.title}</h4>
                     {event.amount !== undefined && (
-                      <span className="font-mono text-sm font-semibold text-neutral-300">
-                        {event.type === "expense" ? "-" : ""}{currency} {event.amount.toLocaleString()}
+                      <span className={`font-mono text-sm font-semibold ${event.type === "expense" ? "text-error-400" : "text-success-400"}`}>
+                        {currency} {Math.abs(event.amount).toLocaleString()}
                       </span>
                     )}
                   </div>

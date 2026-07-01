@@ -69,7 +69,8 @@ export default function SalesPage() {
         status: "completed",
       });
       setSales((prev) => [sale, ...prev]);
-      setProducts((prev) => prev.map((p) => p.id === product.id && p.stock < 999 ? { ...p, stock: Math.max(0, p.stock - qty) } : p));
+      // Refetch products to get server-decremented stock
+      setProducts(await apiClient.getProducts());
       setSelectedProduct("");
       setQuantity("1");
       setCustomerName("");

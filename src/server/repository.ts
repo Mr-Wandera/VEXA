@@ -183,9 +183,28 @@ class InMemoryRepository implements DataRepository {
         .reduce((sum, t) => sum + t.amount, 0)
     );
     const netProfit = totalIncome - totalExpense;
-    const monthlyBurn = totalExpense;
-    const cashReserve = 148500;
+
+    // Monthly burn: average monthly expense based on last 30 days
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const recentExpenses = Math.abs(
+      this.transactions
+        .filter((t) => t.type === "expense" && t.status === "cleared" && new Date(t.date) >= thirtyDaysAgo)
+        .reduce((sum, t) => sum + t.amount, 0)
+    );
+    // If we have less than 30 days of data, use total expenses as approximation
+    const monthlyBurn = recentExpenses > 0 ? recentExpenses : totalExpense;
+
+    // Cash reserve: base + net profit (simulates starting capital + earnings)
+    const cashReserve = 148500 + netProfit;
     const runwayMonths = monthlyBurn > 0 ? Number((cashReserve / monthlyBurn).toFixed(1)) : 99;
+
+    // MRR: sum of recurring income (client retainers) per month
+    const monthlyIncome = this.transactions
+      .filter((t) => t.type === "income" && t.status === "cleared" && new Date(t.date) >= thirtyDaysAgo)
+      .reduce((sum, t) => sum + t.amount, 0);
+    const mrr = monthlyIncome > 0 ? monthlyIncome : 38900;
+
     const totalSales = this.sales
       .filter((s) => s.status === "completed")
       .reduce((sum, s) => sum + s.totalAmount, 0);
@@ -196,7 +215,7 @@ class InMemoryRepository implements DataRepository {
 
     return {
       cashReserve,
-      mrr: 38900,
+      mrr,
       monthlyBurn,
       runwayMonths,
       netProfit,

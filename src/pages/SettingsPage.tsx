@@ -6,6 +6,7 @@ import { BusinessProfile } from "../types";
 import PageHeader from "../components/ui/PageHeader";
 import ErrorState from "../components/ui/ErrorState";
 import { useToast } from "../components/ui/Toast";
+import { invalidateCurrencyCache } from "../lib/useCurrency";
 
 export default function SettingsPage() {
   const { show } = useToast();
@@ -45,6 +46,7 @@ export default function SettingsPage() {
     setSaving(true);
     try {
       await apiClient.updateProfile(profile);
+      invalidateCurrencyCache();
       show("Settings saved successfully", "success");
     } catch (err) {
       console.error(err);

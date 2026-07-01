@@ -154,7 +154,7 @@ function AppContent() {
     );
   }
 
-  return <LandingPage />;
+  return <NotFound />;
 }
 
 function renderAppPage(

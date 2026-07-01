@@ -51,6 +51,7 @@ export default function VexaChatBot({ initialQuery, onClose, variant = "floating
     try {
       const historyPayload = currentMessages
         .filter((msg) => msg.id !== "welcome")
+        .slice(0, -1) // Exclude the just-added user message — it's sent as textToSend
         .map((msg) => ({ role: msg.role, parts: [{ text: msg.text }] }));
 
       const data = await apiClient.chat(textToSend, historyPayload);

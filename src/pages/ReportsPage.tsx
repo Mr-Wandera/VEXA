@@ -84,8 +84,8 @@ export default function ReportsPage() {
     }
   };
 
-  if (loading || !metrics) return <div className="space-y-6"><div className="h-8 w-32 rounded-xl shimmer" /><div className="h-96 rounded-2xl shimmer" /></div>;
-  if (error) return <ErrorState message="Failed to load report data." onRetry={loadData} />;
+  if (loading) return <div className="space-y-6"><div className="h-8 w-32 rounded-xl shimmer" /><div className="h-96 rounded-2xl shimmer" /></div>;
+  if (error || !metrics) return <ErrorState message="Failed to load report data." onRetry={loadData} />;
 
   // Build cashflow data from transactions
   const monthlyData: Record<string, { income: number; expense: number }> = {};

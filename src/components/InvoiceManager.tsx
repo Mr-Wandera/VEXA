@@ -143,9 +143,14 @@ export default function InvoiceManager() {
                           </button>
                         )}
                         {inv.status === 'overdue' && (
-                          <button onClick={() => handleDraftReminder(inv)} className="inline-flex items-center gap-1 rounded-lg border border-primary-500/20 bg-primary-500/10 px-2.5 py-1 text-xs font-semibold text-primary-400 transition hover:bg-primary-600 hover:text-white">
-                            <Sparkles className="h-3 w-3" /><span>Draft Reminder</span>
-                          </button>
+                          <>
+                            <button onClick={() => handleStatusChange(inv.id, 'paid')} className="inline-flex items-center gap-1 rounded-lg border border-success-500/20 bg-success-500/10 px-2 py-1 text-xs font-semibold text-success-400 transition hover:bg-success-600 hover:text-white">
+                              <Check className="h-3 w-3" /><span>Mark Paid</span>
+                            </button>
+                            <button onClick={() => handleDraftReminder(inv)} className="inline-flex items-center gap-1 rounded-lg border border-primary-500/20 bg-primary-500/10 px-2.5 py-1 text-xs font-semibold text-primary-400 transition hover:bg-primary-600 hover:text-white">
+                              <Sparkles className="h-3 w-3" /><span>Remind</span>
+                            </button>
+                          </>
                         )}
                         {inv.status === 'paid' && <span className="text-xs font-mono text-neutral-500">Reconciled</span>}
                       </div>

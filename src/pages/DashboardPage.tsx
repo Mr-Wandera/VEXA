@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { motion } from "motion/react";
 import { Wallet, TrendingUp, TrendingDown, DollarSign, Package, Users, CircleAlert as AlertCircle, Sparkles, Clock, ArrowRight, Activity, Zap, CircleCheck as CheckCircle2 } from "lucide-react";
 import { apiClient } from "../lib/apiClient";
-import { DashboardMetrics, BusinessProfile, VexaInsight, Notification, TimelineEvent } from "../types";
+import { DashboardMetrics, BusinessProfile, VexaInsight, TimelineEvent } from "../types";
 import StatCard from "../components/ui/StatCard";
 import TrendChart from "../components/TrendChart";
 import VexaInsightsPanel from "../components/VexaInsightsPanel";
@@ -28,7 +28,6 @@ export default function DashboardPage({ onAskAI, refreshKey }: DashboardPageProp
   const [profile, setProfile] = useState<BusinessProfile | null>(null);
   const [insights, setInsights] = useState<VexaInsight[]>([]);
   const [insightsLoading, setInsightsLoading] = useState(true);
-  const [notifications, setNotifications] = useState<Notification[]>([]);
   const [timeline, setTimeline] = useState<TimelineEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -36,26 +35,27 @@ export default function DashboardPage({ onAskAI, refreshKey }: DashboardPageProp
   useEffect(() => { loadData(); }, [refreshKey]);
 
   const loadData = async () => {
+    setLoading(true);
     setError(false);
     try {
-      const [{ metrics, profile }, notifs, events] = await Promise.all([
+      const [{ metrics, profile }, events] = await Promise.all([
         apiClient.getMetrics(),
-        apiClient.getNotifications(),
         apiClient.getTimeline(),
       ]);
       setMetrics(metrics);
       setProfile(profile);
-      setNotifications(notifs.filter(n => !n.read).slice(0, 3));
       setTimeline(events.slice(0, 5));
-      const ins = await apiClient.getInsights();
-      setInsights(ins);
     } catch (err) {
       console.error("Failed to load dashboard:", err);
       setError(true);
     } finally {
       setLoading(false);
-      setInsightsLoading(false);
     }
+    // Load insights independently — failure shouldn't break the dashboard
+    setInsightsLoading(true);
+    try { setInsights(await apiClient.getInsights()); }
+    catch (err) { console.error("Insights failed:", err); setInsights([]); }
+    finally { setInsightsLoading(false); }
   };
 
   const refreshInsights = async () => {
@@ -65,7 +65,7 @@ export default function DashboardPage({ onAskAI, refreshKey }: DashboardPageProp
     finally { setInsightsLoading(false); }
   };
 
-  if (loading || !metrics) {
+  if (loading) {
     return (
       <div className="space-y-6">
         <div className="h-32 rounded-2xl shimmer" />
@@ -77,7 +77,7 @@ export default function DashboardPage({ onAskAI, refreshKey }: DashboardPageProp
     );
   }
 
-  if (error) return <ErrorState message="Failed to load dashboard data." onRetry={loadData} />;
+  if (error || !metrics) return <ErrorState message="Failed to load dashboard data." onRetry={loadData} />;
 
   const currency = profile?.currency || "KSh";
   const hour = new Date().getHours();
@@ -270,7 +270,7 @@ export default function DashboardPage({ onAskAI, refreshKey }: DashboardPageProp
                     <p className="text-xs text-neutral-500">{event.description}</p>
                   </div>
                   {event.amount !== undefined && event.amount !== 0 && (
-                    <span className={`font-mono text-xs font-semibold shrink-0 ${event.amount > 0 ? "text-success-400" : "text-error-400"}`}>
+                    <span className={`font-mono text-xs font-semibold shrink-0 ${event.type === "expense" ? "text-error-400" : "text-success-400"}`}>
                       {currency} {Math.abs(event.amount).toLocaleString()}
                     </span>
                   )}
