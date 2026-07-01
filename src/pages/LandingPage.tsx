@@ -9,8 +9,8 @@ export default function LandingPage() {
     <div className="min-h-screen bg-neutral-950 text-white overflow-x-hidden">
       <div className="grid-bg pointer-events-none fixed inset-0 opacity-30" />
       <div className="pointer-events-none fixed inset-0">
-        <div className="absolute left-1/4 top-0 h-[500px] w-[500px] rounded-full bg-primary-500/10 blur-[120px]" />
-        <div className="absolute right-1/4 top-1/3 h-[400px] w-[400px] rounded-full bg-secondary-500/10 blur-[120px]" />
+        <div className="ambient-orb bg-primary-500/10 h-[500px] w-[500px] left-1/4 top-0 float-anim" />
+        <div className="ambient-orb bg-secondary-500/10 h-[400px] w-[400px] right-1/4 top-1/3 float-anim" style={{ animationDelay: '4s' }} />
       </div>
 
       {/* Nav */}
@@ -19,7 +19,7 @@ export default function LandingPage() {
           <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-tr from-primary-500 to-secondary-500 shadow-lg shadow-primary-500/20">
             <Sparkles className="h-5 w-5 text-white" />
           </div>
-          <span className="font-display text-lg font-bold tracking-tight">VEXA</span>
+          <span className="font-display text-lg font-bold tracking-tight gradient-animated">VEXA</span>
         </button>
         <div className="hidden items-center gap-8 md:flex">
           <button onClick={() => document.getElementById("features")?.scrollIntoView({ behavior: "smooth" })} className="text-sm text-neutral-400 hover:text-white transition">Features</button>
@@ -47,13 +47,13 @@ export default function LandingPage() {
           transition={{ duration: 0.6 }}
         >
           <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/[0.06] bg-white/[0.02] px-4 py-1.5 text-xs text-neutral-400 backdrop-blur-xl">
-            <span className="flex h-1.5 w-1.5 rounded-full bg-primary-400 animate-pulse" />
+            <span className="flex h-1.5 w-1.5 rounded-full bg-primary-400 live-pulse" />
             The AI Business Operating System
           </div>
           <h1 className="font-display text-5xl font-bold leading-[1.05] tracking-tight sm:text-6xl lg:text-7xl">
             Run your business
             <br />
-            <span className="gradient-text">like the future.</span>
+            <span className="gradient-animated">like the future.</span>
           </h1>
           <p className="mx-auto mt-6 max-w-2xl text-lg text-neutral-400">
             VEXA is the AI-powered financial operating system for ambitious entrepreneurs.
@@ -63,7 +63,7 @@ export default function LandingPage() {
           <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <button
               onClick={() => navigate("/auth")}
-              className="group flex items-center gap-2 rounded-xl bg-primary-600 px-6 py-3.5 text-sm font-semibold text-white shadow-lg shadow-primary-600/20 transition hover:bg-primary-500"
+              className="group flex items-center gap-2 rounded-xl bg-primary-600 px-6 py-3.5 text-sm font-semibold text-white shadow-lg shadow-primary-600/20 transition hover:bg-primary-500 btn-press"
             >
               Start free today
               <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
@@ -267,7 +267,7 @@ export default function LandingPage() {
         <p className="mt-3 text-neutral-400">Join thousands of entrepreneurs using VEXA to grow smarter.</p>
         <button
           onClick={() => navigate("/auth")}
-          className="group mt-8 inline-flex items-center gap-2 rounded-xl bg-primary-600 px-8 py-4 text-sm font-semibold text-white shadow-lg shadow-primary-600/20 transition hover:bg-primary-500"
+          className="group mt-8 inline-flex items-center gap-2 rounded-xl bg-primary-600 px-8 py-4 text-sm font-semibold text-white shadow-lg shadow-primary-600/20 transition hover:bg-primary-500 btn-press"
         >
           Get started for free
           <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
@@ -281,7 +281,7 @@ export default function LandingPage() {
             <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-tr from-primary-500 to-secondary-500">
               <Sparkles className="h-4 w-4 text-white" />
             </div>
-            <span className="font-display text-sm font-bold">VEXA</span>
+            <span className="font-display text-sm font-bold gradient-animated">VEXA</span>
           </div>
           <p className="text-xs text-neutral-500">The AI Business Operating System. Built for ambitious entrepreneurs.</p>
         </div>

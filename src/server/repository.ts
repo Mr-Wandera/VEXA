@@ -384,7 +384,3 @@ class InMemoryRepository implements DataRepository {
 // Singleton instance — the current "workshop" data layer.
 // Phase 2: replace this export with a Supabase-backed repository.
 export const repository: DataRepository = new InMemoryRepository();
-
-// Backward-compatible export for existing server.ts code that imports dbStore
-import { MockStore } from "./store.ts";
-export const dbStore = new MockStore();

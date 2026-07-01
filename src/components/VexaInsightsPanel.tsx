@@ -17,7 +17,7 @@ export default function VexaInsightsPanel({ insights, loading, onRefresh, onActi
           <div className="rounded-lg bg-primary-500/10 p-1.5 text-primary-400">
             <Sparkles className="h-4 w-4" />
           </div>
-          <h2 className="font-display text-sm font-semibold text-white">AI Insights</h2>
+          <h2 className="font-display text-sm font-semibold gradient-animated">AI Insights</h2>
         </div>
         <button
           onClick={onRefresh}

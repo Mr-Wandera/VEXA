@@ -108,10 +108,10 @@ export default function Header({ onMenuClick, onQuickAdd, notificationCount, bus
 
           {/* Right: search, notifications, quick add */}
           <div className="flex items-center gap-2">
-            {/* Search trigger */}
+            {/* Search trigger — desktop */}
             <button
               onClick={() => setSearchOpen(true)}
-              className="flex items-center gap-2.5 rounded-xl border border-white/[0.06] bg-white/[0.02] px-3 py-2 text-neutral-400 transition hover:bg-white/[0.04] hover:text-white"
+              className="hidden items-center gap-2.5 rounded-xl border border-white/[0.06] bg-white/[0.02] px-3 py-2 text-neutral-400 transition hover:bg-white/[0.04] hover:text-white md:flex"
             >
               <Search className="h-4 w-4" />
               <span className="hidden text-sm lg:inline">Search...</span>
@@ -120,7 +120,7 @@ export default function Header({ onMenuClick, onQuickAdd, notificationCount, bus
               </kbd>
             </button>
 
-            {/* Mobile search icon */}
+            {/* Search trigger — mobile */}
             <button
               onClick={() => setSearchOpen(true)}
               className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-2.5 text-neutral-400 transition hover:text-white md:hidden"

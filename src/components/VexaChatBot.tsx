@@ -113,7 +113,7 @@ export default function VexaChatBot({ initialQuery, onClose, variant = "floating
             <Sparkles className="h-4 w-4" />
           </div>
           <div>
-            <h3 className="font-display text-sm font-semibold text-white">VEXA AI</h3>
+            <h3 className="font-display text-sm font-semibold gradient-animated">VEXA AI</h3>
             <span className="flex items-center gap-1.5 font-mono text-[10px] text-success-400">
               <span className="h-1.5 w-1.5 rounded-full bg-success-400 animate-pulse" />
               ONLINE

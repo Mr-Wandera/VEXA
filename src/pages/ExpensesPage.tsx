@@ -117,7 +117,7 @@ export default function ExpensesPage() {
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1], delay: 0.1 }}
-          className="lg:col-span-2 rounded-2xl border border-white/[0.06] bg-white/[0.025] p-6 backdrop-blur-xl"
+          className="card-premium lg:col-span-2 rounded-2xl border border-white/[0.06] bg-white/[0.025] p-6 backdrop-blur-xl"
         >
           <h3 className="font-display text-base font-semibold text-white border-b border-white/[0.06] pb-4">Recent Expenses</h3>
           <div className="mt-4 space-y-2">
@@ -161,7 +161,7 @@ export default function ExpensesPage() {
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1], delay: 0.15 }}
-          className="rounded-2xl border border-white/[0.06] bg-white/[0.025] p-6 backdrop-blur-xl"
+          className="card-premium rounded-2xl border border-white/[0.06] bg-white/[0.025] p-6 backdrop-blur-xl"
         >
           <h3 className="font-display text-base font-semibold text-white border-b border-white/[0.06] pb-4">Top Categories</h3>
           <div className="mt-4 space-y-3">

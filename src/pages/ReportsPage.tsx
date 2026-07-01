@@ -144,7 +144,7 @@ export default function ReportsPage() {
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1], delay: 0.1 }}
-        className="rounded-2xl border border-white/[0.06] bg-white/[0.025] p-6 backdrop-blur-xl"
+        className="card-premium rounded-2xl border border-white/[0.06] bg-white/[0.025] p-6 backdrop-blur-xl"
       >
         <h3 className="font-display text-base font-semibold text-white border-b border-white/[0.06] pb-4">Monthly Cash Flow</h3>
         <div className="mt-4 h-80">
@@ -172,7 +172,7 @@ export default function ReportsPage() {
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1], delay: 0.15 }}
-          className="rounded-2xl border border-white/[0.06] bg-white/[0.025] p-6 backdrop-blur-xl"
+          className="card-premium rounded-2xl border border-white/[0.06] bg-white/[0.025] p-6 backdrop-blur-xl"
         >
           <h3 className="font-display text-base font-semibold text-white border-b border-white/[0.06] pb-4">Net Profit Trend</h3>
           <div className="mt-4 h-72">
@@ -203,7 +203,7 @@ export default function ReportsPage() {
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1], delay: 0.2 }}
-          className="rounded-2xl border border-white/[0.06] bg-white/[0.025] p-6 backdrop-blur-xl"
+          className="card-premium rounded-2xl border border-white/[0.06] bg-white/[0.025] p-6 backdrop-blur-xl"
         >
           <h3 className="font-display text-base font-semibold text-white border-b border-white/[0.06] pb-4">Expense Breakdown</h3>
           <div className="mt-4 h-72">
@@ -229,11 +229,11 @@ export default function ReportsPage() {
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1], delay: 0.25 }}
-        className="rounded-2xl border border-primary-500/20 bg-primary-500/5 p-6 backdrop-blur-xl"
+        className="card-premium rounded-2xl border border-primary-500/20 bg-primary-500/5 p-6 backdrop-blur-xl"
       >
         <div className="flex items-center gap-2 mb-3">
           <div className="rounded-lg bg-primary-500/15 p-1.5 text-primary-400"><Sparkles className="h-4 w-4" /></div>
-          <h3 className="font-display text-base font-semibold text-white">AI Financial Summary</h3>
+          <h3 className="gradient-animated font-display text-base font-semibold">AI Financial Summary</h3>
         </div>
         <p className="text-sm text-neutral-300 leading-relaxed">
           Your business has a net profit of {fmt(metrics.netProfit)} with a cash reserve of {fmt(metrics.cashReserve)}.

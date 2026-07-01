@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "motion/react";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { LayoutDashboard, ShoppingCart, Package, Receipt, Users, Truck, Handshake, ChartBar as BarChart3, Bell, Clock, Settings, Sparkles, FileText, X, ChevronLeft } from "lucide-react";
 import { useRouter } from "../lib/router";
 
@@ -7,6 +7,7 @@ interface SidebarProps {
   open: boolean;
   onClose: () => void;
   notificationCount: number;
+  onCollapseChange?: (collapsed: boolean) => void;
 }
 
 const NAV_SECTIONS = [
@@ -44,20 +45,18 @@ const NAV_SECTIONS = [
   },
 ];
 
-export default function Sidebar({ open, onClose, notificationCount }: SidebarProps) {
+export default function Sidebar({ open, onClose, notificationCount, onCollapseChange }: SidebarProps) {
   const { path, navigate } = useRouter();
-  const [collapsed, setCollapsed] = useState(false);
-
-  // Persist collapsed state
-  useEffect(() => {
-    const saved = localStorage.getItem("vexa-sidebar-collapsed");
-    if (saved === "true") setCollapsed(true);
-  }, []);
+  const [collapsed, setCollapsed] = useState(() => {
+    if (typeof window !== 'undefined') return localStorage.getItem("vexa-sidebar-collapsed") === "true";
+    return false;
+  });
 
   const toggleCollapse = () => {
     const next = !collapsed;
     setCollapsed(next);
     localStorage.setItem("vexa-sidebar-collapsed", String(next));
+    onCollapseChange?.(next);
   };
 
   const handleNavigate = (to: string) => {
@@ -97,7 +96,7 @@ export default function Sidebar({ open, onClose, notificationCount }: SidebarPro
                 <Sparkles className="h-5 w-5 text-white" />
               </div>
               {!collapsed && (
-                <span className="font-display text-lg font-bold tracking-tight text-white whitespace-nowrap">VEXA</span>
+                <span className="font-display text-lg font-bold tracking-tight gradient-animated whitespace-nowrap">VEXA</span>
               )}
             </button>
             <button onClick={onClose} className="rounded-lg p-1.5 text-neutral-400 hover:text-white lg:hidden">

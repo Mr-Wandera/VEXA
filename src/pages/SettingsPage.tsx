@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { motion } from "motion/react";
 import { Building, Mail, Phone, MapPin, Percent, Save, Check, Landmark } from "lucide-react";
 import { apiClient } from "../lib/apiClient";
 import { BusinessProfile } from "../types";
@@ -61,7 +62,12 @@ export default function SettingsPage() {
       <PageHeader title="Settings" subtitle="Manage your business profile and preferences." />
 
       <form onSubmit={handleSave} className="max-w-2xl space-y-6">
-        <div className="rounded-2xl border border-white/[0.06] bg-white/[0.025] p-6 backdrop-blur-xl">
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+          className="card-premium rounded-2xl border border-white/[0.06] bg-white/[0.025] p-6 backdrop-blur-xl"
+        >
           <h3 className="font-display text-base font-semibold text-white border-b border-white/[0.06] pb-4">Business Profile</h3>
           <div className="mt-5 space-y-4">
             <div>
@@ -99,9 +105,14 @@ export default function SettingsPage() {
               </div>
             </div>
           </div>
-        </div>
+        </motion.div>
 
-        <div className="rounded-2xl border border-white/[0.06] bg-white/[0.025] p-6 backdrop-blur-xl">
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1], delay: 0.05 }}
+          className="card-premium rounded-2xl border border-white/[0.06] bg-white/[0.025] p-6 backdrop-blur-xl"
+        >
           <h3 className="font-display text-base font-semibold text-white border-b border-white/[0.06] pb-4">Contact Information</h3>
           <div className="mt-5 space-y-4">
             <div className="grid grid-cols-2 gap-4">
@@ -138,9 +149,14 @@ export default function SettingsPage() {
               </div>
             </div>
           </div>
-        </div>
+        </motion.div>
 
-        <div className="rounded-2xl border border-white/[0.06] bg-white/[0.025] p-6 backdrop-blur-xl">
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1], delay: 0.1 }}
+          className="card-premium rounded-2xl border border-white/[0.06] bg-white/[0.025] p-6 backdrop-blur-xl"
+        >
           <h3 className="font-display text-base font-semibold text-white border-b border-white/[0.06] pb-4">Integrations</h3>
           <div className="mt-5 flex items-center justify-between rounded-xl border border-white/[0.06] bg-white/[0.015] p-4">
             <div className="flex items-center gap-3">
@@ -153,7 +169,7 @@ export default function SettingsPage() {
             <div className="flex items-center gap-2">
               {profile.stripeConnected ? (
                 <>
-                  <span className="h-2 w-2 rounded-full bg-success-400 animate-pulse" />
+                  <span className="live-pulse h-2 w-2 rounded-full bg-success-400" />
                   <span className="font-mono text-[10px] uppercase font-semibold text-success-400">Connected</span>
                   <button
                     type="button"
@@ -174,7 +190,7 @@ export default function SettingsPage() {
               )}
             </div>
           </div>
-        </div>
+        </motion.div>
 
         <div className="flex justify-end">
           <button type="submit" disabled={saving}

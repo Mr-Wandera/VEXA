@@ -45,7 +45,10 @@ function AppContent() {
   const { path } = useRouter();
   const { show } = useToast();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    if (typeof window !== 'undefined') return localStorage.getItem("vexa-sidebar-collapsed") === "true";
+    return false;
+  });
   const [quickAddOpen, setQuickAddOpen] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
   const [chatQuery, setChatQuery] = useState("");
@@ -71,14 +74,8 @@ function AppContent() {
     if (path.startsWith("/app")) loadHeaderData();
   }, [path.startsWith("/app"), refreshKey]);
 
-  // Sync collapsed state with sidebar's localStorage
-  useEffect(() => {
-    const checkCollapsed = () => {
-      setSidebarCollapsed(localStorage.getItem("vexa-sidebar-collapsed") === "true");
-    };
-    checkCollapsed();
-    const interval = setInterval(checkCollapsed, 300);
-    return () => clearInterval(interval);
+  const handleSidebarCollapse = useCallback((collapsed: boolean) => {
+    setSidebarCollapsed(collapsed);
   }, []);
 
   const handleAddTransaction = useCallback(
@@ -110,11 +107,11 @@ function AppContent() {
       <div className="min-h-screen bg-neutral-950 text-neutral-200">
         {/* Ambient background */}
         <div className="grid-bg pointer-events-none fixed inset-0 opacity-30" />
-        <div className="ambient-orb bg-primary-500/10 h-96 w-96 -left-20 top-0" />
-        <div className="ambient-orb bg-secondary-500/10 h-96 w-96 right-0 top-1/3" />
+        <div className="ambient-orb bg-primary-500/10 h-96 w-96 -left-20 top-0 float-anim" />
+        <div className="ambient-orb bg-secondary-500/10 h-96 w-96 right-0 top-1/3 float-anim" style={{ animationDelay: '6s' }} />
 
         <div className="relative">
-          <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} notificationCount={notificationCount} />
+          <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} notificationCount={notificationCount} onCollapseChange={handleSidebarCollapse} />
           <div className={`transition-all duration-300 ease-spring ${mainPadding}`}>
             <Header
               onMenuClick={() => setSidebarOpen(true)}

@@ -63,8 +63,8 @@ export default function AuthPage({ onAuthed }: AuthPageProps) {
       <div className="relative hidden w-1/2 flex-col justify-between overflow-hidden border-r border-white/[0.04] bg-neutral-950 p-12 lg:flex">
         <div className="grid-bg pointer-events-none absolute inset-0 opacity-30" />
         <div className="pointer-events-none absolute inset-0">
-          <div className="absolute left-1/4 top-1/4 h-[400px] w-[400px] rounded-full bg-primary-500/10 blur-[100px]" />
-          <div className="absolute bottom-1/4 right-1/4 h-[300px] w-[300px] rounded-full bg-secondary-500/10 blur-[100px]" />
+          <div className="ambient-orb bg-primary-500/10 h-[400px] w-[400px] left-1/4 top-1/4 float-anim" />
+          <div className="ambient-orb bg-secondary-500/10 h-[300px] w-[300px] bottom-1/4 right-1/4 float-anim" style={{ animationDelay: '4s' }} />
         </div>
 
         <div className="relative z-10">
@@ -72,7 +72,7 @@ export default function AuthPage({ onAuthed }: AuthPageProps) {
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-tr from-primary-500 to-secondary-500 shadow-lg shadow-primary-500/20">
               <Sparkles className="h-5 w-5 text-white" />
             </div>
-            <span className="font-display text-lg font-bold tracking-tight">VEXA</span>
+            <span className="font-display text-lg font-bold tracking-tight gradient-animated">VEXA</span>
           </button>
         </div>
 
