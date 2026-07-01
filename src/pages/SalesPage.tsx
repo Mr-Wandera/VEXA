@@ -105,10 +105,15 @@ export default function SalesPage() {
         <StatCard title="Total Transactions" value={sales.length} icon={ShoppingCart} accent="accent" />
       </div>
 
-      <div className="rounded-2xl border border-neutral-800/60 bg-neutral-900/30 p-6 backdrop-blur-xl">
-        <div className="flex flex-col gap-4 border-b border-neutral-800/60 pb-4 sm:flex-row sm:items-center sm:justify-between">
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1], delay: 0.1 }}
+        className="rounded-2xl border border-white/[0.06] bg-white/[0.025] p-6 backdrop-blur-xl"
+      >
+        <div className="flex flex-col gap-4 border-b border-white/[0.06] pb-4 sm:flex-row sm:items-center sm:justify-between">
           <h3 className="font-display text-base font-semibold text-white">Sales History</h3>
-          <div className="flex items-center gap-1.5 rounded-xl border border-neutral-800 bg-neutral-950 p-1 overflow-x-auto">
+          <div className="flex items-center gap-1.5 rounded-xl border border-white/[0.06] bg-white/[0.02] p-1 overflow-x-auto">
             {(["all", "completed", "pending", "refunded"] as const).map((opt) => (
               <button
                 key={opt}
@@ -125,7 +130,7 @@ export default function SalesPage() {
 
         {filteredSales.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center">
-            <div className="mb-3 rounded-2xl bg-neutral-900/50 p-4">
+            <div className="mb-3 rounded-2xl bg-white/[0.02] p-4">
               <ShoppingCart className="h-8 w-8 text-neutral-600" />
             </div>
             <p className="text-sm text-neutral-400">No sales recorded yet.</p>
@@ -139,7 +144,7 @@ export default function SalesPage() {
             <div className="mt-4 hidden overflow-x-auto md:block">
               <table className="w-full text-left">
                 <thead>
-                  <tr className="border-b border-neutral-800 text-[10px] font-mono uppercase tracking-wider text-neutral-500">
+                  <tr className="border-b border-white/[0.06] text-[10px] font-mono uppercase tracking-wider text-neutral-500">
                     <th className="py-3 px-4">Date</th>
                     <th className="py-3 px-4">Product</th>
                     <th className="py-3 px-4">Customer</th>
@@ -150,9 +155,9 @@ export default function SalesPage() {
                     <th className="py-3 px-4 text-center">Status</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-neutral-800/40">
+                <tbody className="divide-y divide-white/[0.03]">
                   {filteredSales.map((sale) => (
-                    <tr key={sale.id} className="group hover:bg-neutral-950/20 transition">
+                    <tr key={sale.id} className="group hover:bg-white/[0.015] transition">
                       <td className="py-3 px-4 font-mono text-xs text-neutral-400">{sale.date}</td>
                       <td className="py-3 px-4 text-sm font-medium text-white">{sale.productName}</td>
                       <td className="py-3 px-4 text-sm text-neutral-300">{sale.customerName}</td>
@@ -182,7 +187,7 @@ export default function SalesPage() {
             {/* Mobile cards */}
             <div className="mt-4 space-y-3 md:hidden">
               {filteredSales.map((sale) => (
-                <div key={sale.id} className="rounded-xl border border-neutral-800/40 bg-neutral-950/30 p-4">
+                <div key={sale.id} className="rounded-xl border border-white/[0.04] bg-white/[0.015] p-4">
                   <div className="flex items-start justify-between">
                     <div>
                       <p className="text-sm font-medium text-white">{sale.productName}</p>
@@ -204,7 +209,7 @@ export default function SalesPage() {
             </div>
           </>
         )}
-      </div>
+      </motion.div>
 
       <Modal isOpen={showAdd} onClose={() => setShowAdd(false)} title="Record New Sale">
         <form onSubmit={handleAddSale} className="space-y-4">
@@ -214,7 +219,7 @@ export default function SalesPage() {
               required
               value={selectedProduct}
               onChange={(e) => setSelectedProduct(e.target.value)}
-              className="w-full rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-3 text-sm text-white focus:border-primary-500 focus:outline-none"
+              className="w-full rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3 text-sm text-white focus:border-primary-500 focus:outline-none"
             >
               <option value="">Select a product...</option>
               {products.map((p) => (
@@ -229,12 +234,12 @@ export default function SalesPage() {
             <div>
               <label className="block text-xs font-medium text-neutral-400 mb-1.5">Quantity</label>
               <input required type="number" min="1" value={quantity} onChange={(e) => setQuantity(e.target.value)}
-                className="w-full rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-3 text-sm text-white focus:border-primary-500 focus:outline-none font-mono" />
+                className="w-full rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3 text-sm text-white focus:border-primary-500 focus:outline-none font-mono" />
             </div>
             <div>
               <label className="block text-xs font-medium text-neutral-400 mb-1.5">Payment Method</label>
               <select value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value as Sale["paymentMethod"])}
-                className="w-full rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-3 text-sm text-white focus:border-primary-500 focus:outline-none">
+                className="w-full rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3 text-sm text-white focus:border-primary-500 focus:outline-none">
                 <option value="mpesa">M-Pesa</option>
                 <option value="cash">Cash</option>
                 <option value="card">Card</option>
@@ -247,7 +252,7 @@ export default function SalesPage() {
             <label className="block text-xs font-medium text-neutral-400 mb-1.5">Customer Name (optional)</label>
             <input type="text" value={customerName} onChange={(e) => setCustomerName(e.target.value)}
               placeholder="Walk-in Customer"
-              className="w-full rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-3 text-sm text-white placeholder-neutral-600 focus:border-primary-500 focus:outline-none" />
+              className="w-full rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3 text-sm text-white placeholder-neutral-600 focus:border-primary-500 focus:outline-none" />
           </div>
 
           {selectedProduct && quantity && Number(quantity) > 0 && (
@@ -261,13 +266,13 @@ export default function SalesPage() {
             </div>
           )}
 
-          <div className="flex justify-end gap-3 border-t border-neutral-800 pt-5">
+          <div className="flex justify-end gap-3 border-t border-white/[0.06] pt-5">
             <button type="button" onClick={() => setShowAdd(false)}
-              className="rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-2.5 text-xs font-semibold text-neutral-400 hover:text-white transition">
+              className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-2.5 text-xs font-semibold text-neutral-400 hover:text-white transition">
               Cancel
             </button>
             <button type="submit" disabled={submitting}
-              className="flex items-center gap-1.5 rounded-xl bg-primary-600 px-5 py-2.5 text-xs font-semibold text-white hover:bg-primary-500 transition disabled:opacity-50">
+              className="btn-press flex items-center gap-1.5 rounded-xl bg-primary-600 px-5 py-2.5 text-xs font-semibold text-white hover:bg-primary-500 transition disabled:opacity-50">
               <Sparkles className="h-3.5 w-3.5" />
               {submitting ? "Recording..." : "Record Sale"}
             </button>
@@ -281,7 +286,7 @@ export default function SalesPage() {
 function PageSkeleton() {
   return (
     <div className="space-y-6">
-      <div className="h-8 w-32 rounded-lg shimmer" />
+      <div className="h-8 w-32 rounded-xl shimmer" />
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         {Array.from({ length: 3 }).map((_, i) => <div key={i} className="h-28 rounded-2xl shimmer" />)}
       </div>

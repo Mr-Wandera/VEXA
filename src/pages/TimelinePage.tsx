@@ -4,6 +4,7 @@ import { ShoppingCart, Receipt, FileText, Package, Users, Sparkles, Clock } from
 import { apiClient } from "../lib/apiClient";
 import { TimelineEvent } from "../types";
 import ErrorState from "../components/ui/ErrorState";
+import PageHeader from "../components/ui/PageHeader";
 import { useCurrency } from "../lib/useCurrency";
 
 const ICON_MAP = {
@@ -42,24 +43,21 @@ export default function TimelinePage() {
     loadData();
   }, []);
 
-  if (loading) return <div className="space-y-6"><div className="h-8 w-32 rounded-lg shimmer" /><div className="space-y-3">{Array.from({ length: 5 }).map((_, i) => <div key={i} className="h-16 rounded-2xl shimmer" />)}</div></div>;
+  if (loading) return <div className="space-y-6"><div className="h-8 w-32 rounded-xl shimmer" /><div className="space-y-3">{Array.from({ length: 5 }).map((_, i) => <div key={i} className="h-16 rounded-2xl shimmer" />)}</div></div>;
   if (error) return <ErrorState message="Failed to load timeline." onRetry={loadData} />;
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="font-display text-2xl font-bold tracking-tight text-white">Business Timeline</h1>
-        <p className="text-sm text-neutral-400">A chronological view of everything happening in your business.</p>
-      </div>
+      <PageHeader title="Business Timeline" subtitle="A chronological view of everything happening in your business." />
 
       <div className="relative">
         {/* Vertical line */}
-        <div className="absolute left-5 top-0 h-full w-px bg-neutral-800" />
+        <div className="absolute left-5 top-0 h-full w-px bg-white/[0.06]" />
 
         <div className="space-y-4">
           {events.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 text-center">
-              <div className="mb-3 rounded-2xl bg-neutral-900/50 p-4"><Clock className="h-8 w-8 text-neutral-600" /></div>
+              <div className="mb-3 rounded-2xl bg-white/[0.02] p-4"><Clock className="h-8 w-8 text-neutral-600" /></div>
               <p className="text-sm text-neutral-400">No activity yet.</p>
             </div>
           ) : (
@@ -76,7 +74,7 @@ export default function TimelinePage() {
                 <div className={`relative z-10 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${COLOR_MAP[event.type]}`}>
                   <Icon className="h-5 w-5" />
                 </div>
-                <div className="flex-1 rounded-2xl border border-neutral-800/60 bg-neutral-900/30 p-4 backdrop-blur-xl">
+                <div className="flex-1 rounded-2xl border border-white/[0.06] bg-white/[0.025] p-4 backdrop-blur-xl">
                   <div className="flex items-center justify-between">
                     <h4 className="font-display text-sm font-semibold text-white">{event.title}</h4>
                     {event.amount !== undefined && (

@@ -1,12 +1,18 @@
-import { Compass } from "lucide-react";
+import { motion } from "motion/react";
+import { Compass, ArrowLeft } from "lucide-react";
 import { useRouter } from "../../lib/router";
 
 export default function NotFound() {
   const { navigate } = useRouter();
 
   return (
-    <div className="flex flex-col items-center justify-center py-20 text-center">
-      <div className="mb-4 rounded-2xl bg-neutral-900/50 p-5">
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+      className="flex flex-col items-center justify-center py-20 text-center"
+    >
+      <div className="mb-4 rounded-2xl bg-white/[0.03] p-5">
         <Compass className="h-10 w-10 text-neutral-500" />
       </div>
       <h1 className="font-display text-2xl font-bold text-white">Page Not Found</h1>
@@ -15,10 +21,11 @@ export default function NotFound() {
       </p>
       <button
         onClick={() => navigate("/app/dashboard")}
-        className="mt-6 rounded-xl bg-primary-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-primary-500"
+        className="mt-6 flex items-center gap-2 rounded-xl bg-primary-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-primary-500 btn-press"
       >
+        <ArrowLeft className="h-4 w-4" />
         Back to Dashboard
       </button>
-    </div>
+    </motion.div>
   );
 }

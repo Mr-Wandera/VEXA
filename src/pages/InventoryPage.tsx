@@ -89,7 +89,7 @@ export default function InventoryPage() {
   if (loading) {
     return (
       <div className="space-y-6">
-        <div className="h-8 w-32 rounded-lg shimmer" />
+        <div className="h-8 w-32 rounded-xl shimmer" />
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
           {Array.from({ length: 4 }).map((_, i) => <div key={i} className="h-28 rounded-2xl shimmer" />)}
         </div>
@@ -117,10 +117,15 @@ export default function InventoryPage() {
       </div>
 
       {/* Products grid */}
-      <div className="rounded-2xl border border-neutral-800/60 bg-neutral-900/30 p-6 backdrop-blur-xl">
-        <div className="flex flex-col gap-4 border-b border-neutral-800/60 pb-4 sm:flex-row sm:items-center sm:justify-between">
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1], delay: 0.1 }}
+        className="rounded-2xl border border-white/[0.06] bg-white/[0.025] p-6 backdrop-blur-xl"
+      >
+        <div className="flex flex-col gap-4 border-b border-white/[0.06] pb-4 sm:flex-row sm:items-center sm:justify-between">
           <h3 className="font-display text-base font-semibold text-white">Products</h3>
-          <div className="flex items-center gap-1.5 rounded-xl border border-neutral-800 bg-neutral-950 p-1">
+          <div className="flex items-center gap-1.5 rounded-xl border border-white/[0.06] bg-white/[0.02] p-1">
             {(["all", "low", "out"] as const).map((opt) => (
               <button key={opt} onClick={() => setFilter(opt)} className={`rounded-lg px-3 py-1.5 text-xs font-semibold capitalize transition ${filter === opt ? "bg-neutral-800 text-white" : "text-neutral-500 hover:text-white"}`}>
                 {opt === "all" ? "All" : opt === "low" ? "Low Stock" : "Out of Stock"}
@@ -132,7 +137,7 @@ export default function InventoryPage() {
         <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {filteredProducts.length === 0 ? (
             <div className="col-span-full flex flex-col items-center justify-center py-16 text-center">
-              <div className="mb-3 rounded-2xl bg-neutral-900/50 p-4">
+              <div className="mb-3 rounded-2xl bg-white/[0.02] p-4">
                 <Package className="h-8 w-8 text-neutral-600" />
               </div>
               <p className="text-sm text-neutral-400">No products found.</p>
@@ -149,7 +154,7 @@ export default function InventoryPage() {
                   initial={{ opacity: 0, y: 12 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.03 }}
-                  className="group rounded-xl border border-neutral-800/60 bg-neutral-950/30 p-4 transition hover:border-neutral-700"
+                  className="group rounded-xl border border-white/[0.06] bg-white/[0.015] p-4 transition hover:border-neutral-700"
                 >
                   <div className="flex items-start justify-between">
                     <div>
@@ -186,7 +191,7 @@ export default function InventoryPage() {
             })
           )}
         </div>
-      </div>
+      </motion.div>
 
       {/* Add Product Modal */}
       <Modal isOpen={showAdd} onClose={() => setShowAdd(false)} title="Add New Product">
@@ -194,42 +199,42 @@ export default function InventoryPage() {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-medium text-neutral-400 mb-1.5">Product Name</label>
-              <input required type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Premium Hoodie" className="w-full rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-3 text-sm text-white focus:border-primary-500 focus:outline-none" />
+              <input required type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Premium Hoodie" className="w-full rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3 text-sm text-white focus:border-primary-500 focus:outline-none" />
             </div>
             <div>
               <label className="block text-xs font-medium text-neutral-400 mb-1.5">SKU</label>
-              <input required type="text" value={sku} onChange={(e) => setSku(e.target.value)} placeholder="HD-001" className="w-full rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-3 text-sm text-white focus:border-primary-500 focus:outline-none font-mono" />
+              <input required type="text" value={sku} onChange={(e) => setSku(e.target.value)} placeholder="HD-001" className="w-full rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3 text-sm text-white focus:border-primary-500 focus:outline-none font-mono" />
             </div>
           </div>
 
           <div>
             <label className="block text-xs font-medium text-neutral-400 mb-1.5">Category</label>
-            <input required type="text" value={category} onChange={(e) => setCategory(e.target.value)} placeholder="Apparel, Services, etc." className="w-full rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-3 text-sm text-white focus:border-primary-500 focus:outline-none" />
+            <input required type="text" value={category} onChange={(e) => setCategory(e.target.value)} placeholder="Apparel, Services, etc." className="w-full rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3 text-sm text-white focus:border-primary-500 focus:outline-none" />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-medium text-neutral-400 mb-1.5">Selling Price ({currency})</label>
-              <input required type="number" min="0" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="2500" className="w-full rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-3 text-sm text-white focus:border-primary-500 focus:outline-none font-mono" />
+              <input required type="number" min="0" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="2500" className="w-full rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3 text-sm text-white focus:border-primary-500 focus:outline-none font-mono" />
             </div>
             <div>
               <label className="block text-xs font-medium text-neutral-400 mb-1.5">Cost Price ({currency})</label>
-              <input required type="number" min="0" value={cost} onChange={(e) => setCost(e.target.value)} placeholder="1200" className="w-full rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-3 text-sm text-white focus:border-primary-500 focus:outline-none font-mono" />
+              <input required type="number" min="0" value={cost} onChange={(e) => setCost(e.target.value)} placeholder="1200" className="w-full rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3 text-sm text-white focus:border-primary-500 focus:outline-none font-mono" />
             </div>
           </div>
 
           <div className="grid grid-cols-3 gap-4">
             <div>
               <label className="block text-xs font-medium text-neutral-400 mb-1.5">Stock</label>
-              <input required type="number" min="0" value={stock} onChange={(e) => setStock(e.target.value)} placeholder="45" className="w-full rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-3 text-sm text-white focus:border-primary-500 focus:outline-none font-mono" />
+              <input required type="number" min="0" value={stock} onChange={(e) => setStock(e.target.value)} placeholder="45" className="w-full rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3 text-sm text-white focus:border-primary-500 focus:outline-none font-mono" />
             </div>
             <div>
               <label className="block text-xs font-medium text-neutral-400 mb-1.5">Reorder At</label>
-              <input required type="number" min="0" value={reorderLevel} onChange={(e) => setReorderLevel(e.target.value)} placeholder="15" className="w-full rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-3 text-sm text-white focus:border-primary-500 focus:outline-none font-mono" />
+              <input required type="number" min="0" value={reorderLevel} onChange={(e) => setReorderLevel(e.target.value)} placeholder="15" className="w-full rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3 text-sm text-white focus:border-primary-500 focus:outline-none font-mono" />
             </div>
             <div>
               <label className="block text-xs font-medium text-neutral-400 mb-1.5">Unit</label>
-              <select value={unit} onChange={(e) => setUnit(e.target.value)} className="w-full rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-3 text-sm text-white focus:border-primary-500 focus:outline-none">
+              <select value={unit} onChange={(e) => setUnit(e.target.value)} className="w-full rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3 text-sm text-white focus:border-primary-500 focus:outline-none">
                 <option value="pcs">pcs</option>
                 <option value="kg">kg</option>
                 <option value="hr">hr</option>
@@ -239,9 +244,9 @@ export default function InventoryPage() {
             </div>
           </div>
 
-          <div className="flex justify-end gap-3 border-t border-neutral-800 pt-5">
-            <button type="button" onClick={() => setShowAdd(false)} className="rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-2.5 text-xs font-semibold text-neutral-400 hover:text-white transition">Cancel</button>
-            <button type="submit" disabled={submitting} className="rounded-xl bg-primary-600 px-5 py-2.5 text-xs font-semibold text-white hover:bg-primary-500 transition disabled:opacity-50">
+          <div className="flex justify-end gap-3 border-t border-white/[0.06] pt-5">
+            <button type="button" onClick={() => setShowAdd(false)} className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-2.5 text-xs font-semibold text-neutral-400 hover:text-white transition">Cancel</button>
+            <button type="submit" disabled={submitting} className="btn-press rounded-xl bg-primary-600 px-5 py-2.5 text-xs font-semibold text-white hover:bg-primary-500 transition disabled:opacity-50">
               {submitting ? "Adding..." : "Add Product"}
             </button>
           </div>

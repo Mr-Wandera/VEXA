@@ -78,7 +78,7 @@
   --color-error-800: #9f1239;
   --color-error-900: #881337;
 
-  /* Neutral — warm-tinted dark grays */
+  /* Neutral — refined dark grays with slight blue tint for depth */
   --color-neutral-50: #fafafa;
   --color-neutral-100: #f5f5f5;
   --color-neutral-200: #e5e5e5;
@@ -88,45 +88,87 @@
   --color-neutral-600: #525252;
   --color-neutral-700: #404040;
   --color-neutral-800: #262626;
-  --color-neutral-900: #171717;
-  --color-neutral-950: #0a0a0a;
+  --color-neutral-850: #1c1c1c;
+  --color-neutral-900: #161616;
+  --color-neutral-925: #121214;
+  --color-neutral-950: #0c0c0e;
+  --color-neutral-975: #08080a;
+
+  /* Z-index layering system */
+  --z-base: 0;
+  --z-sidebar: 30;
+  --z-header: 20;
+  --z-dropdown: 40;
+  --z-modal: 50;
+  --z-toast: 100;
+
+  /* Shared motion tokens */
+  --ease-spring: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+  --duration-fast: 0.15s;
+  --duration-normal: 0.25s;
+  --duration-slow: 0.4s;
 }
 
 body {
   font-family: var(--font-sans);
-  background-color: #0a0a0a;
-  color: #f3f4f6;
+  background-color: #0c0c0e;
+  color: #e5e5e5;
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  line-height: 1.6;
 }
 
-/* Custom scrollbar */
+/* Custom scrollbar — refined and minimal */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 ::-webkit-scrollbar-track {
-  background: #0d0d0d;
+  background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #1f222a;
-  border-radius: 3px;
+  background: #2a2a2e;
+  border-radius: 10px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #2e3340;
+  background: #3a3a3e;
 }
 
 /* Selection */
 ::selection {
-  background: rgba(16, 185, 129, 0.25);
+  background: rgba(16, 185, 129, 0.2);
   color: #fff;
 }
 
-/* Focus ring */
+/* Focus ring — refined */
 *:focus-visible {
   outline: 2px solid var(--color-primary-500);
   outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ─── Design System Utilities ─── */
+
+/* Surface elevation system */
+.surface-1 {
+  background: rgba(255, 255, 255, 0.025);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+.surface-2 {
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(32px);
+  -webkit-backdrop-filter: blur(32px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.surface-3 {
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(40px);
+  -webkit-backdrop-filter: blur(40px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 /* Glassmorphism utility */
@@ -145,12 +187,21 @@ body {
   background-clip: text;
 }
 
-/* Animated grid background */
+/* Animated grid background — subtler */
 .grid-bg {
   background-image:
-    linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
-  background-size: 4rem 4rem;
+    linear-gradient(to right, rgba(255, 255, 255, 0.015) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.015) 1px, transparent 1px);
+  background-size: 3rem 3rem;
+}
+
+/* Ambient glow orbs */
+.ambient-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  pointer-events: none;
+  opacity: 0.4;
 }
 
 /* Shimmer for skeletons */
@@ -159,26 +210,45 @@ body {
   100% { background-position: 200% 0; }
 }
 .shimmer {
-  background: linear-gradient(90deg, #1a1a1a 25%, #2a2a2a 50%, #1a1a1a 75%);
+  background: linear-gradient(90deg, #1a1a1c 25%, #2a2a2e 50%, #1a1a1c 75%);
   background-size: 200% 100%;
-  animation: shimmer 1.5s infinite;
+  animation: shimmer 1.8s infinite;
 }
 
-/* Fade-in animation for page transitions */
+/* ─── Animation Keyframes ─── */
+
 @keyframes fadeInUp {
   from { opacity: 0; transform: translateY(12px); }
   to { opacity: 1; transform: translateY(0); }
 }
 .fade-in-up {
-  animation: fadeInUp 0.4s ease-out forwards;
+  animation: fadeInUp 0.4s var(--ease-spring) forwards;
 }
+
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes pulseGlow {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.7; }
+}
+.pulse-glow {
+  animation: pulseGlow 3s ease-in-out infinite;
+}
+
+/* ─── Form Styling ─── */
 
 /* Fix autofill on dark backgrounds */
 .auth-input:-webkit-autofill,
 .auth-input:-webkit-autofill:hover,
-.auth-input:-webkit-autofill:focus {
+.auth-input:-webkit-autofill:focus,
+.form-input:-webkit-autofill,
+.form-input:-webkit-autofill:hover,
+.form-input:-webkit-autofill:focus {
   -webkit-text-fill-color: #ffffff;
-  -webkit-box-shadow: 0 0 0px 1000px #171717 inset;
+  -webkit-box-shadow: 0 0 0px 1000px #161616 inset;
   transition: background-color 5000s ease-in-out 0s;
   caret-color: #ffffff;
 }
@@ -191,6 +261,26 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 
 /* Select element option styling for dark mode */
 select option {
-  background-color: #171717;
+  background-color: #161616;
   color: #ffffff;
+}
+
+/* ─── Card hover effect ─── */
+.card-hover {
+  transition: transform var(--duration-normal) var(--ease-spring),
+              border-color var(--duration-normal) var(--ease-smooth),
+              background var(--duration-normal) var(--ease-smooth);
+}
+.card-hover:hover {
+  transform: translateY(-2px);
+  border-color: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+/* ─── Button press effect ─── */
+.btn-press {
+  transition: transform var(--duration-fast) var(--ease-smooth);
+}
+.btn-press:active {
+  transform: scale(0.97);
 }

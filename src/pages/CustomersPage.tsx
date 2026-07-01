@@ -56,7 +56,7 @@ export default function CustomersPage() {
   const activeCount = clients.filter((c) => c.status === "active").length;
 
   if (loading) {
-    return <div className="space-y-6"><div className="h-8 w-32 rounded-lg shimmer" /><div className="grid grid-cols-1 gap-4 sm:grid-cols-3">{Array.from({ length: 3 }).map((_, i) => <div key={i} className="h-28 rounded-2xl shimmer" />)}</div></div>;
+    return <div className="space-y-6"><div className="h-8 w-32 rounded-xl shimmer" /><div className="grid grid-cols-1 gap-4 sm:grid-cols-3">{Array.from({ length: 3 }).map((_, i) => <div key={i} className="h-28 rounded-2xl shimmer" />)}</div></div>;
   }
 
   if (error) {
@@ -79,7 +79,7 @@ export default function CustomersPage() {
 
       {clients.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 text-center">
-          <div className="mb-3 rounded-2xl bg-neutral-900/50 p-4"><Users className="h-8 w-8 text-neutral-600" /></div>
+          <div className="mb-3 rounded-2xl bg-white/[0.02] p-4"><Users className="h-8 w-8 text-neutral-600" /></div>
           <p className="text-sm text-neutral-400">No customers yet.</p>
           <button onClick={() => setShowAdd(true)} className="mt-3 text-sm font-medium text-primary-400 hover:text-primary-300 transition">Add your first customer →</button>
         </div>
@@ -91,7 +91,7 @@ export default function CustomersPage() {
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.04 }}
-            className="group rounded-2xl border border-neutral-800/60 bg-neutral-900/30 p-5 backdrop-blur-xl transition hover:border-neutral-700"
+            className="card-hover group rounded-2xl border border-white/[0.06] bg-white/[0.025] p-5 backdrop-blur-xl transition hover:border-neutral-700"
           >
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-3">
@@ -113,7 +113,7 @@ export default function CustomersPage() {
               {client.phone && <div className="flex items-center gap-2 text-neutral-400"><Phone className="h-3 w-3" />{client.phone}</div>}
             </div>
 
-            <div className="mt-4 flex items-center justify-between border-t border-neutral-800/60 pt-3">
+            <div className="mt-4 flex items-center justify-between border-t border-white/[0.06] pt-3">
               <div>
                 <p className="text-[10px] uppercase text-neutral-500">Total Invoiced</p>
                 <p className="font-mono text-sm font-semibold text-white">{currency} {client.totalInvoiced.toLocaleString()}</p>
@@ -134,19 +134,19 @@ export default function CustomersPage() {
         <form onSubmit={handleAdd} className="space-y-4">
           <div>
             <label className="block text-xs font-medium text-neutral-400 mb-1.5">Full Name</label>
-            <input required type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Brian Kamau" className="w-full rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-3 text-sm text-white focus:border-primary-500 focus:outline-none" />
+            <input required type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Brian Kamau" className="w-full rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3 text-sm text-white focus:border-primary-500 focus:outline-none" />
           </div>
           <div>
             <label className="block text-xs font-medium text-neutral-400 mb-1.5">Email</label>
-            <input required type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="brian@example.com" className="w-full rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-3 text-sm text-white focus:border-primary-500 focus:outline-none" />
+            <input required type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="brian@example.com" className="w-full rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3 text-sm text-white focus:border-primary-500 focus:outline-none" />
           </div>
           <div>
             <label className="block text-xs font-medium text-neutral-400 mb-1.5">Phone (optional)</label>
-            <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+254 700 000 000" className="w-full rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-3 text-sm text-white focus:border-primary-500 focus:outline-none" />
+            <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+254 700 000 000" className="w-full rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3 text-sm text-white focus:border-primary-500 focus:outline-none" />
           </div>
-          <div className="flex justify-end gap-3 border-t border-neutral-800 pt-5">
-            <button type="button" onClick={() => setShowAdd(false)} className="rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-2.5 text-xs font-semibold text-neutral-400 hover:text-white transition">Cancel</button>
-            <button type="submit" disabled={submitting} className="rounded-xl bg-primary-600 px-5 py-2.5 text-xs font-semibold text-white hover:bg-primary-500 transition disabled:opacity-50">{submitting ? "Adding..." : "Add Customer"}</button>
+          <div className="flex justify-end gap-3 border-t border-white/[0.06] pt-5">
+            <button type="button" onClick={() => setShowAdd(false)} className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-2.5 text-xs font-semibold text-neutral-400 hover:text-white transition">Cancel</button>
+            <button type="submit" disabled={submitting} className="btn-press rounded-xl bg-primary-600 px-5 py-2.5 text-xs font-semibold text-white hover:bg-primary-500 transition disabled:opacity-50">{submitting ? "Adding..." : "Add Customer"}</button>
           </div>
         </form>
       </Modal>

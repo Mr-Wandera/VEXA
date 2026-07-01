@@ -1,5 +1,5 @@
-import type { LucideIcon } from "lucide-react";
 import { motion } from "motion/react";
+import type { LucideIcon } from "lucide-react";
 import AnimatedCounter from "./AnimatedCounter";
 
 interface StatCardProps {
@@ -10,31 +10,21 @@ interface StatCardProps {
   decimals?: number;
   subtext?: string;
   icon: LucideIcon;
-  trend?: { value: string; type: "up" | "down" | "neutral" };
-  accent?: "primary" | "secondary" | "accent" | "error" | "warning";
+  accent: "primary" | "secondary" | "accent" | "error" | "warning" | "success";
+  trend?: { value: string; type: "up" | "down" };
   delay?: number;
 }
 
-const ACCENT_COLORS = {
-  primary: { glow: "rgba(16, 185, 129, 0.12)", text: "text-primary-400", bg: "bg-primary-500/10" },
-  secondary: { glow: "rgba(14, 165, 233, 0.12)", text: "text-secondary-400", bg: "bg-secondary-500/10" },
-  accent: { glow: "rgba(245, 158, 11, 0.12)", text: "text-accent-400", bg: "bg-accent-500/10" },
-  error: { glow: "rgba(244, 63, 94, 0.12)", text: "text-error-400", bg: "bg-error-500/10" },
-  warning: { glow: "rgba(249, 115, 22, 0.12)", text: "text-warning-400", bg: "bg-warning-500/10" },
+const ACCENT_COLORS: Record<string, { text: string; bg: string; glow: string; border: string }> = {
+  primary: { text: "text-primary-400", bg: "bg-primary-500/10", glow: "rgba(16, 185, 129, 0.08)", border: "border-primary-500/20" },
+  secondary: { text: "text-secondary-400", bg: "bg-secondary-500/10", glow: "rgba(14, 165, 233, 0.08)", border: "border-secondary-500/20" },
+  accent: { text: "text-accent-400", bg: "bg-accent-500/10", glow: "rgba(245, 158, 11, 0.08)", border: "border-accent-500/20" },
+  error: { text: "text-error-400", bg: "bg-error-500/10", glow: "rgba(244, 63, 94, 0.08)", border: "border-error-500/20" },
+  warning: { text: "text-warning-400", bg: "bg-warning-500/10", glow: "rgba(249, 115, 22, 0.08)", border: "border-warning-500/20" },
+  success: { text: "text-success-400", bg: "bg-success-500/10", glow: "rgba(34, 197, 94, 0.08)", border: "border-success-500/20" },
 };
 
-export default function StatCard({
-  title,
-  value,
-  prefix = "",
-  suffix = "",
-  decimals = 0,
-  subtext,
-  icon: Icon,
-  trend,
-  accent = "primary",
-  delay = 0,
-}: StatCardProps) {
+export default function StatCard({ title, value, prefix, suffix, decimals = 0, subtext, icon: Icon, accent, trend, delay = 0 }: StatCardProps) {
   const colors = ACCENT_COLORS[accent];
 
   return (
@@ -42,42 +32,36 @@ export default function StatCard({
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, delay, ease: [0.22, 1, 0.36, 1] }}
-      whileHover={{ y: -3, transition: { duration: 0.2 } }}
-      className="relative overflow-hidden rounded-2xl border border-neutral-800/60 bg-neutral-900/30 p-5 backdrop-blur-xl"
+      whileHover={{ y: -3 }}
+      className="group relative overflow-hidden rounded-2xl border border-white/[0.06] bg-white/[0.025] p-5 backdrop-blur-xl card-hover"
     >
+      {/* Glow blob */}
       <div
-        className="absolute -right-10 -top-10 h-28 w-28 rounded-full blur-3xl"
+        className="absolute -right-6 -top-6 h-24 w-24 rounded-full blur-3xl opacity-0 transition-opacity duration-500 group-hover:opacity-100"
         style={{ backgroundColor: colors.glow }}
       />
+
       <div className="relative flex items-center justify-between">
-        <span className="font-display text-sm font-medium text-neutral-400">{title}</span>
-        <div className={`rounded-lg border border-neutral-800 bg-neutral-950 p-2 ${colors.text}`}>
+        <p className="text-xs font-medium text-neutral-400">{title}</p>
+        <div className={`flex h-9 w-9 items-center justify-center rounded-xl ${colors.bg} ${colors.text}`}>
           <Icon className="h-4 w-4" />
         </div>
       </div>
-      <div className="relative mt-3 flex items-baseline gap-2">
-        <AnimatedCounter
-          value={value}
-          prefix={prefix}
-          suffix={suffix}
-          decimals={decimals}
-          className="font-mono text-2xl font-semibold tracking-tight text-white"
-        />
+
+      <div className="relative mt-4 flex items-baseline gap-2">
+        {prefix && <span className="font-mono text-sm text-neutral-500">{prefix}</span>}
+        <AnimatedCounter value={value} decimals={decimals} className="font-display text-2xl font-bold tracking-tight text-white" />
+        {suffix && <span className="font-mono text-sm text-neutral-500">{suffix}</span>}
+      </div>
+
+      <div className="relative mt-2 flex items-center gap-2">
         {trend && (
-          <span
-            className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium font-mono ${
-              trend.type === "up"
-                ? "bg-success-500/10 text-success-400"
-                : trend.type === "down"
-                  ? "bg-error-500/10 text-error-400"
-                  : "bg-neutral-500/10 text-neutral-400"
-            }`}
-          >
-            {trend.value}
+          <span className={`inline-flex items-center gap-0.5 text-xs font-semibold ${trend.type === "up" ? "text-success-400" : "text-error-400"}`}>
+            {trend.type === "up" ? "↑" : "↓"} {trend.value}
           </span>
         )}
+        {subtext && <span className="text-xs text-neutral-500">{subtext}</span>}
       </div>
-      {subtext && <p className="relative mt-1 text-xs text-neutral-500">{subtext}</p>}
     </motion.div>
   );
 }

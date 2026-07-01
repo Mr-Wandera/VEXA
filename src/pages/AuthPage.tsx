@@ -60,7 +60,7 @@ export default function AuthPage({ onAuthed }: AuthPageProps) {
   return (
     <div className="min-h-screen bg-neutral-950 text-white flex">
       {/* Left panel — branding */}
-      <div className="relative hidden w-1/2 flex-col justify-between overflow-hidden border-r border-neutral-900 bg-neutral-950 p-12 lg:flex">
+      <div className="relative hidden w-1/2 flex-col justify-between overflow-hidden border-r border-white/[0.04] bg-neutral-950 p-12 lg:flex">
         <div className="grid-bg pointer-events-none absolute inset-0 opacity-30" />
         <div className="pointer-events-none absolute inset-0">
           <div className="absolute left-1/4 top-1/4 h-[400px] w-[400px] rounded-full bg-primary-500/10 blur-[100px]" />
@@ -139,7 +139,7 @@ export default function AuthPage({ onAuthed }: AuthPageProps) {
                       value={name}
                       onChange={(e) => setName(e.target.value)}
                       placeholder="Brian Kamau"
-                      className="auth-input w-full rounded-xl border border-neutral-800 bg-neutral-900/50 py-3 pl-11 pr-4 text-sm text-white placeholder-neutral-600 transition focus:border-primary-500 focus:outline-none"
+                      className="auth-input w-full rounded-xl border border-white/[0.06] bg-white/[0.02] py-3 pl-11 pr-4 text-sm text-white placeholder-neutral-600 transition focus:border-primary-500 focus:outline-none"
                     />
                   </div>
                 </motion.div>
@@ -158,7 +158,7 @@ export default function AuthPage({ onAuthed }: AuthPageProps) {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="you@business.com"
-                  className="auth-input w-full rounded-xl border border-neutral-800 bg-neutral-900/50 py-3 pl-11 pr-4 text-sm text-white placeholder-neutral-600 transition focus:border-primary-500 focus:outline-none"
+                  className="auth-input w-full rounded-xl border border-white/[0.06] bg-white/[0.02] py-3 pl-11 pr-4 text-sm text-white placeholder-neutral-600 transition focus:border-primary-500 focus:outline-none"
                 />
               </div>
             </div>
@@ -175,7 +175,7 @@ export default function AuthPage({ onAuthed }: AuthPageProps) {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="auth-input w-full rounded-xl border border-neutral-800 bg-neutral-900/50 py-3 pl-11 pr-11 text-sm text-white placeholder-neutral-600 transition focus:border-primary-500 focus:outline-none"
+                  className="auth-input w-full rounded-xl border border-white/[0.06] bg-white/[0.02] py-3 pl-11 pr-11 text-sm text-white placeholder-neutral-600 transition focus:border-primary-500 focus:outline-none"
                 />
                 <button
                   type="button"
@@ -201,7 +201,7 @@ export default function AuthPage({ onAuthed }: AuthPageProps) {
             <button
               type="submit"
               disabled={loading}
-              className="group flex w-full items-center justify-center gap-2 rounded-xl bg-primary-600 py-3.5 text-sm font-semibold text-white shadow-lg shadow-primary-600/20 transition hover:bg-primary-500 disabled:opacity-50"
+              className="group flex w-full items-center justify-center gap-2 rounded-xl bg-primary-600 py-3.5 text-sm font-semibold text-white shadow-lg shadow-primary-600/15 transition hover:bg-primary-500 disabled:opacity-50 btn-press"
             >
               {loading ? (
                 <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />

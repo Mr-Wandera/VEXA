@@ -1,26 +1,33 @@
-import { CircleAlert as AlertCircle, RefreshCw } from "lucide-react";
+import { motion } from "motion/react";
+import { TriangleAlert as AlertTriangle, RefreshCw } from "lucide-react";
 
 interface ErrorStateProps {
-  message?: string;
+  message: string;
   onRetry?: () => void;
 }
 
-export default function ErrorState({ message = "Something went wrong.", onRetry }: ErrorStateProps) {
+export default function ErrorState({ message, onRetry }: ErrorStateProps) {
   return (
-    <div className="flex flex-col items-center justify-center py-20 text-center">
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+      className="flex flex-col items-center justify-center py-20 text-center"
+    >
       <div className="mb-4 rounded-2xl bg-error-500/10 p-4">
-        <AlertCircle className="h-8 w-8 text-error-400" />
+        <AlertTriangle className="h-8 w-8 text-error-400" />
       </div>
-      <p className="text-sm text-neutral-300">{message}</p>
+      <h3 className="font-display text-lg font-semibold text-white">Something went wrong</h3>
+      <p className="mt-1.5 max-w-sm text-sm text-neutral-400">{message}</p>
       {onRetry && (
         <button
           onClick={onRetry}
-          className="mt-4 flex items-center gap-1.5 rounded-xl border border-neutral-800 bg-neutral-900/50 px-4 py-2 text-sm font-medium text-neutral-300 transition hover:text-white"
+          className="mt-5 flex items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-white/[0.06] btn-press"
         >
-          <RefreshCw className="h-3.5 w-3.5" />
+          <RefreshCw className="h-4 w-4" />
           Try again
         </button>
       )}
-    </div>
+    </motion.div>
   );
 }

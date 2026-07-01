@@ -85,7 +85,7 @@ export default function ExpensesPage() {
   if (loading) {
     return (
       <div className="space-y-6">
-        <div className="h-8 w-32 rounded-lg shimmer" />
+        <div className="h-8 w-32 rounded-xl shimmer" />
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           {Array.from({ length: 3 }).map((_, i) => <div key={i} className="h-28 rounded-2xl shimmer" />)}
         </div>
@@ -113,12 +113,17 @@ export default function ExpensesPage() {
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         {/* Expense list */}
-        <div className="lg:col-span-2 rounded-2xl border border-neutral-800/60 bg-neutral-900/30 p-6 backdrop-blur-xl">
-          <h3 className="font-display text-base font-semibold text-white border-b border-neutral-800/60 pb-4">Recent Expenses</h3>
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1], delay: 0.1 }}
+          className="lg:col-span-2 rounded-2xl border border-white/[0.06] bg-white/[0.025] p-6 backdrop-blur-xl"
+        >
+          <h3 className="font-display text-base font-semibold text-white border-b border-white/[0.06] pb-4">Recent Expenses</h3>
           <div className="mt-4 space-y-2">
             {expenses.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 text-center">
-                <div className="mb-3 rounded-2xl bg-neutral-900/50 p-4">
+                <div className="mb-3 rounded-2xl bg-white/[0.02] p-4">
                   <Receipt className="h-8 w-8 text-neutral-600" />
                 </div>
                 <p className="text-sm text-neutral-400">No expenses recorded yet.</p>
@@ -130,7 +135,7 @@ export default function ExpensesPage() {
                   initial={{ opacity: 0, x: -10 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: i * 0.03 }}
-                  className="group flex items-center justify-between rounded-xl border border-neutral-800/40 bg-neutral-950/30 p-4 transition hover:border-neutral-700"
+                  className="group flex items-center justify-between rounded-xl border border-white/[0.04] bg-white/[0.015] p-4 transition hover:border-neutral-700"
                 >
                   <div className="flex items-center gap-3">
                     <div className="rounded-lg bg-error-500/10 p-2.5 text-error-400">
@@ -149,11 +154,16 @@ export default function ExpensesPage() {
               ))
             )}
           </div>
-        </div>
+        </motion.div>
 
         {/* Category breakdown */}
-        <div className="rounded-2xl border border-neutral-800/60 bg-neutral-900/30 p-6 backdrop-blur-xl">
-          <h3 className="font-display text-base font-semibold text-white border-b border-neutral-800/60 pb-4">Top Categories</h3>
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1], delay: 0.15 }}
+          className="rounded-2xl border border-white/[0.06] bg-white/[0.025] p-6 backdrop-blur-xl"
+        >
+          <h3 className="font-display text-base font-semibold text-white border-b border-white/[0.06] pb-4">Top Categories</h3>
           <div className="mt-4 space-y-3">
             {topCategories.map(([cat, amount], i) => {
               const pct = totalExpenses > 0 ? (amount / totalExpenses) * 100 : 0;
@@ -175,7 +185,7 @@ export default function ExpensesPage() {
               );
             })}
           </div>
-        </div>
+        </motion.div>
       </div>
 
       {/* Add Expense Modal */}
@@ -183,23 +193,23 @@ export default function ExpensesPage() {
         <form onSubmit={handleAdd} className="space-y-4">
           <div>
             <label className="block text-xs font-medium text-neutral-400 mb-1.5">Description</label>
-            <input required type="text" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="e.g. AWS Cloud Servers" className="w-full rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-3 text-sm text-white focus:border-primary-500 focus:outline-none" />
+            <input required type="text" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="e.g. AWS Cloud Servers" className="w-full rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3 text-sm text-white focus:border-primary-500 focus:outline-none" />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-medium text-neutral-400 mb-1.5">Amount ({currency})</label>
-              <input required type="number" min="0" step="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0.00" className="w-full rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-3 text-sm text-white focus:border-primary-500 focus:outline-none font-mono" />
+              <input required type="number" min="0" step="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0.00" className="w-full rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3 text-sm text-white focus:border-primary-500 focus:outline-none font-mono" />
             </div>
             <div>
               <label className="block text-xs font-medium text-neutral-400 mb-1.5">Date</label>
-              <input required type="date" value={date} onChange={(e) => setDate(e.target.value)} className="w-full rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-3 text-sm text-white focus:border-primary-500 focus:outline-none font-mono" />
+              <input required type="date" value={date} onChange={(e) => setDate(e.target.value)} className="w-full rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3 text-sm text-white focus:border-primary-500 focus:outline-none font-mono" />
             </div>
           </div>
 
           <div>
             <label className="block text-xs font-medium text-neutral-400 mb-1.5">Category</label>
-            <select value={category} onChange={(e) => setCategory(e.target.value)} className="w-full rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-3 text-sm text-white focus:border-primary-500 focus:outline-none">
+            <select value={category} onChange={(e) => setCategory(e.target.value)} className="w-full rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3 text-sm text-white focus:border-primary-500 focus:outline-none">
               {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
             </select>
           </div>
@@ -207,11 +217,11 @@ export default function ExpensesPage() {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-medium text-neutral-400 mb-1.5">Vendor</label>
-              <input type="text" value={vendor} onChange={(e) => setVendor(e.target.value)} placeholder="e.g. Amazon" className="w-full rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-3 text-sm text-white focus:border-primary-500 focus:outline-none" />
+              <input type="text" value={vendor} onChange={(e) => setVendor(e.target.value)} placeholder="e.g. Amazon" className="w-full rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3 text-sm text-white focus:border-primary-500 focus:outline-none" />
             </div>
             <div>
               <label className="block text-xs font-medium text-neutral-400 mb-1.5">Payment Method</label>
-              <select value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value as Expense["paymentMethod"])} className="w-full rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-3 text-sm text-white focus:border-primary-500 focus:outline-none">
+              <select value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value as Expense["paymentMethod"])} className="w-full rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3 text-sm text-white focus:border-primary-500 focus:outline-none">
                 <option value="card">Card</option>
                 <option value="mpesa">M-Pesa</option>
                 <option value="cash">Cash</option>
@@ -220,9 +230,9 @@ export default function ExpensesPage() {
             </div>
           </div>
 
-          <div className="flex justify-end gap-3 border-t border-neutral-800 pt-5">
-            <button type="button" onClick={() => setShowAdd(false)} className="rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-2.5 text-xs font-semibold text-neutral-400 hover:text-white transition">Cancel</button>
-            <button type="submit" disabled={submitting} className="rounded-xl bg-primary-600 px-5 py-2.5 text-xs font-semibold text-white hover:bg-primary-500 transition disabled:opacity-50">
+          <div className="flex justify-end gap-3 border-t border-white/[0.06] pt-5">
+            <button type="button" onClick={() => setShowAdd(false)} className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-2.5 text-xs font-semibold text-neutral-400 hover:text-white transition">Cancel</button>
+            <button type="submit" disabled={submitting} className="btn-press rounded-xl bg-primary-600 px-5 py-2.5 text-xs font-semibold text-white hover:bg-primary-500 transition disabled:opacity-50">
               {submitting ? "Recording..." : "Record Expense"}
             </button>
           </div>

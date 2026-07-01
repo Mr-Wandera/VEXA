@@ -4,6 +4,7 @@ import { Bell, CircleAlert as AlertCircle, CircleCheck as CheckCircle, Info, Spa
 import { apiClient } from "../lib/apiClient";
 import { Notification } from "../types";
 import ErrorState from "../components/ui/ErrorState";
+import PageHeader from "../components/ui/PageHeader";
 import { useToast } from "../components/ui/Toast";
 import { useRouter } from "../lib/router";
 
@@ -82,7 +83,7 @@ export default function NotificationsPage() {
     }
   };
 
-  if (loading) return <div className="space-y-6"><div className="h-8 w-32 rounded-lg shimmer" /><div className="space-y-3">{Array.from({ length: 4 }).map((_, i) => <div key={i} className="h-20 rounded-2xl shimmer" />)}</div></div>;
+  if (loading) return <div className="space-y-6"><div className="h-8 w-32 rounded-xl shimmer" /><div className="space-y-3">{Array.from({ length: 4 }).map((_, i) => <div key={i} className="h-20 rounded-2xl shimmer" />)}</div></div>;
   if (error) return <ErrorState message="Failed to load notifications." onRetry={loadData} />;
 
   const emptyMessage = filter === "unread"
@@ -91,18 +92,16 @@ export default function NotificationsPage() {
 
   return (
     <div className="space-y-6">
+      <PageHeader title="Notifications" subtitle={`${unreadCount} unread notification${unreadCount !== 1 ? "s" : ""}`} />
+
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="font-display text-2xl font-bold tracking-tight text-white">Notifications</h1>
-          <p className="mt-1 text-sm text-neutral-400">{unreadCount} unread notification{unreadCount !== 1 ? "s" : ""}</p>
-        </div>
         <div className="flex items-center gap-2">
           {unreadCount > 0 && (
-            <button onClick={handleMarkAllRead} className="rounded-xl border border-neutral-800 bg-neutral-900/50 px-4 py-2 text-xs font-semibold text-neutral-300 transition hover:text-white">
+            <button onClick={handleMarkAllRead} className="btn-press rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-2 text-xs font-semibold text-neutral-300 transition hover:text-white">
               Mark all read
             </button>
           )}
-          <div className="flex items-center gap-1.5 rounded-xl border border-neutral-800 bg-neutral-950 p-1">
+          <div className="flex items-center gap-1.5 rounded-xl border border-white/[0.06] bg-white/[0.02] p-1">
             {(["all", "unread"] as const).map((opt) => (
               <button key={opt} onClick={() => setFilter(opt)} className={`rounded-lg px-3 py-1.5 text-xs font-semibold capitalize transition ${filter === opt ? "bg-neutral-800 text-white" : "text-neutral-500 hover:text-white"}`}>
                 {opt}
@@ -115,7 +114,7 @@ export default function NotificationsPage() {
       <div className="space-y-3">
         {filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-center">
-            <div className="mb-3 rounded-2xl bg-neutral-900/50 p-4">
+            <div className="mb-3 rounded-2xl bg-white/[0.02] p-4">
               <Bell className="h-8 w-8 text-neutral-600" />
             </div>
             <p className="text-sm text-neutral-400">{emptyMessage}</p>
@@ -130,7 +129,7 @@ export default function NotificationsPage() {
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: i * 0.05 }}
                 className={`group flex items-start gap-4 rounded-2xl border p-5 backdrop-blur-xl transition ${
-                  notif.read ? "border-neutral-800/40 bg-neutral-900/20" : "border-neutral-800/60 bg-neutral-900/40"
+                  notif.read ? "border-white/[0.04] bg-white/[0.015]" : "border-white/[0.06] bg-white/[0.03]"
                 }`}
               >
                 <div className={`rounded-xl p-2.5 ${getColor(notif.type)}`}>

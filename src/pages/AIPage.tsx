@@ -1,12 +1,10 @@
 import VexaChatBot from "../components/VexaChatBot";
+import PageHeader from "../components/ui/PageHeader";
 
 export default function AIPage() {
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="font-display text-2xl font-bold tracking-tight text-white">VEXA AI</h1>
-        <p className="text-sm text-neutral-400">Your AI business partner — ask anything about your business.</p>
-      </div>
+      <PageHeader title="VEXA AI" subtitle="Your AI business partner — ask anything about your business." />
       <VexaChatBot variant="embedded" />
     </div>
   );

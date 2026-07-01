@@ -46,7 +46,7 @@ export default function LandingPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
         >
-          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-neutral-800 bg-neutral-900/50 px-4 py-1.5 text-xs text-neutral-400 backdrop-blur-xl">
+          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/[0.06] bg-white/[0.02] px-4 py-1.5 text-xs text-neutral-400 backdrop-blur-xl">
             <span className="flex h-1.5 w-1.5 rounded-full bg-primary-400 animate-pulse" />
             The AI Business Operating System
           </div>
@@ -70,7 +70,7 @@ export default function LandingPage() {
             </button>
             <button
               onClick={() => navigate("/app/dashboard")}
-              className="rounded-xl border border-neutral-800 bg-neutral-900/50 px-6 py-3.5 text-sm font-semibold text-white backdrop-blur-xl transition hover:bg-neutral-800/50"
+              className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-6 py-3.5 text-sm font-semibold text-white backdrop-blur-xl transition hover:bg-white/[0.04]"
             >
               View live demo
             </button>
@@ -110,7 +110,7 @@ export default function LandingPage() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.4, delay: i * 0.05 }}
-              className="group rounded-2xl border border-neutral-800/60 bg-neutral-900/30 p-6 backdrop-blur-xl transition hover:border-neutral-700"
+              className="group rounded-2xl border border-white/[0.06] bg-white/[0.025] p-6 backdrop-blur-xl card-hover"
             >
               <div className="mb-4 inline-flex rounded-xl bg-primary-500/10 p-3 text-primary-400">
                 <f.icon className="h-5 w-5" />
@@ -128,7 +128,7 @@ export default function LandingPage() {
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="rounded-3xl border border-neutral-800/60 bg-neutral-900/30 p-10 backdrop-blur-xl lg:p-16"
+          className="rounded-3xl border border-white/[0.06] bg-white/[0.025] p-10 backdrop-blur-xl lg:p-16"
         >
           <div className="mb-6 inline-flex rounded-2xl bg-gradient-to-tr from-primary-500/20 to-secondary-500/20 p-4">
             <Sparkles className="h-8 w-8 text-primary-400" />
@@ -153,7 +153,7 @@ export default function LandingPage() {
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.1 }}
-                className="flex items-start gap-3 rounded-xl border border-neutral-800/50 bg-neutral-950/40 p-4"
+                className="flex items-start gap-3 rounded-xl border border-white/[0.04] bg-white/[0.015] p-4"
               >
                 <Check className="mt-0.5 h-4 w-4 shrink-0 text-primary-400" />
                 <p className="text-sm text-neutral-300">{quote}</p>
@@ -181,7 +181,7 @@ export default function LandingPage() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: i * 0.1 }}
-              className="rounded-2xl border border-neutral-800/60 bg-neutral-900/30 p-6 backdrop-blur-xl"
+              className="rounded-2xl border border-white/[0.06] bg-white/[0.025] p-6 backdrop-blur-xl"
             >
               <div className="mb-3 flex gap-0.5">
                 {Array.from({ length: 5 }).map((_, j) => <Star key={j} className="h-4 w-4 fill-accent-400 text-accent-400" />)}
@@ -221,8 +221,8 @@ export default function LandingPage() {
               transition={{ delay: i * 0.1 }}
               className={`relative rounded-2xl border p-6 backdrop-blur-xl ${
                 plan.highlight
-                  ? "border-primary-500/40 bg-primary-500/5"
-                  : "border-neutral-800/60 bg-neutral-900/30"
+                  ? "border-primary-500/40 bg-primary-500/[0.04]"
+                  : "border-white/[0.06] bg-white/[0.025]"
               }`}
             >
               {plan.highlight && (
@@ -249,7 +249,7 @@ export default function LandingPage() {
                 className={`mt-6 w-full rounded-xl py-3 text-sm font-semibold transition ${
                   plan.highlight
                     ? "bg-primary-600 text-white hover:bg-primary-500"
-                    : "border border-neutral-800 bg-neutral-900/50 text-white hover:bg-neutral-800/50"
+                    : "border border-white/[0.06] bg-white/[0.02] text-white hover:bg-white/[0.04]"
                 }`}
               >
                 {plan.cta}
@@ -275,7 +275,7 @@ export default function LandingPage() {
       </section>
 
       {/* Footer */}
-      <footer className="relative z-10 border-t border-neutral-900 px-6 py-8 lg:px-12">
+      <footer className="relative z-10 border-t border-white/[0.04] px-6 py-8 lg:px-12">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 sm:flex-row">
           <div className="flex items-center gap-2.5">
             <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-tr from-primary-500 to-secondary-500">

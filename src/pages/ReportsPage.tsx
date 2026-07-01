@@ -1,10 +1,12 @@
 import { useState, useEffect, useCallback } from "react";
+import { motion } from "motion/react";
 import { ChartBar as BarChart3, TrendingUp, TrendingDown, DollarSign, Download, Sparkles } from "lucide-react";
 import { BarChart, Bar, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from "recharts";
 import { apiClient } from "../lib/apiClient";
 import { DashboardMetrics, Expense, Transaction } from "../types";
 import StatCard from "../components/ui/StatCard";
 import ErrorState from "../components/ui/ErrorState";
+import PageHeader from "../components/ui/PageHeader";
 import { useToast } from "../components/ui/Toast";
 import { useCurrency } from "../lib/useCurrency";
 
@@ -82,7 +84,7 @@ export default function ReportsPage() {
     }
   };
 
-  if (loading || !metrics) return <div className="space-y-6"><div className="h-8 w-32 rounded-lg shimmer" /><div className="h-96 rounded-2xl shimmer" /></div>;
+  if (loading || !metrics) return <div className="space-y-6"><div className="h-8 w-32 rounded-xl shimmer" /><div className="h-96 rounded-2xl shimmer" /></div>;
   if (error) return <ErrorState message="Failed to load report data." onRetry={loadData} />;
 
   // Build cashflow data from transactions
@@ -121,30 +123,30 @@ export default function ReportsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="font-display text-2xl font-bold tracking-tight text-white">Reports</h1>
-          <p className="text-sm text-neutral-400">Financial analytics and business performance.</p>
-        </div>
-        <button
-          onClick={handleExport}
-          disabled={exporting}
-          className="flex items-center gap-1.5 rounded-xl border border-neutral-800 bg-neutral-900/50 px-4 py-2.5 text-sm font-semibold text-neutral-300 backdrop-blur-xl transition hover:text-white disabled:opacity-50"
-        >
-          <Download className="h-4 w-4" /><span className="hidden sm:inline">{exporting ? "Exporting..." : "Export CSV"}</span>
-        </button>
-      </div>
+      <PageHeader title="Reports" subtitle="Financial analytics and business performance." action={{ label: "Export CSV", icon: Download, onClick: handleExport }} />
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {/* Export button is handled via PageHeader action; exporting state shown in label */}
+
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1], delay: 0.05 }}
+        className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4"
+      >
         <StatCard title="Total Income" value={metrics.totalIncome} prefix={`${currency} `} icon={TrendingUp} accent="primary" />
         <StatCard title="Total Expenses" value={metrics.totalExpense} prefix={`${currency} `} icon={TrendingDown} accent="error" />
         <StatCard title="Net Profit" value={metrics.netProfit} prefix={`${currency} `} icon={DollarSign} accent="secondary" />
         <StatCard title="MRR" value={metrics.mrr} prefix={`${currency} `} icon={BarChart3} accent="accent" />
-      </div>
+      </motion.div>
 
       {/* Cash flow bar chart */}
-      <div className="rounded-2xl border border-neutral-800/60 bg-neutral-900/30 p-6 backdrop-blur-xl">
-        <h3 className="font-display text-base font-semibold text-white border-b border-neutral-800/60 pb-4">Monthly Cash Flow</h3>
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1], delay: 0.1 }}
+        className="rounded-2xl border border-white/[0.06] bg-white/[0.025] p-6 backdrop-blur-xl"
+      >
+        <h3 className="font-display text-base font-semibold text-white border-b border-white/[0.06] pb-4">Monthly Cash Flow</h3>
         <div className="mt-4 h-80">
           {cashflowData.length > 0 ? (
             <ResponsiveContainer width="100%" height="100%">
@@ -162,12 +164,17 @@ export default function ReportsPage() {
             <div className="flex h-full items-center justify-center text-sm text-neutral-500">No transaction data available.</div>
           )}
         </div>
-      </div>
+      </motion.div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Net profit trend */}
-        <div className="rounded-2xl border border-neutral-800/60 bg-neutral-900/30 p-6 backdrop-blur-xl">
-          <h3 className="font-display text-base font-semibold text-white border-b border-neutral-800/60 pb-4">Net Profit Trend</h3>
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1], delay: 0.15 }}
+          className="rounded-2xl border border-white/[0.06] bg-white/[0.025] p-6 backdrop-blur-xl"
+        >
+          <h3 className="font-display text-base font-semibold text-white border-b border-white/[0.06] pb-4">Net Profit Trend</h3>
           <div className="mt-4 h-72">
             {cashflowData.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
@@ -189,11 +196,16 @@ export default function ReportsPage() {
               <div className="flex h-full items-center justify-center text-sm text-neutral-500">No data available.</div>
             )}
           </div>
-        </div>
+        </motion.div>
 
         {/* Expense breakdown pie */}
-        <div className="rounded-2xl border border-neutral-800/60 bg-neutral-900/30 p-6 backdrop-blur-xl">
-          <h3 className="font-display text-base font-semibold text-white border-b border-neutral-800/60 pb-4">Expense Breakdown</h3>
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1], delay: 0.2 }}
+          className="rounded-2xl border border-white/[0.06] bg-white/[0.025] p-6 backdrop-blur-xl"
+        >
+          <h3 className="font-display text-base font-semibold text-white border-b border-white/[0.06] pb-4">Expense Breakdown</h3>
           <div className="mt-4 h-72">
             {expenseBreakdown.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
@@ -209,11 +221,16 @@ export default function ReportsPage() {
               <div className="flex h-full items-center justify-center text-sm text-neutral-500">No expense data available.</div>
             )}
           </div>
-        </div>
+        </motion.div>
       </div>
 
       {/* AI Summary */}
-      <div className="rounded-2xl border border-primary-500/20 bg-primary-500/5 p-6 backdrop-blur-xl">
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1], delay: 0.25 }}
+        className="rounded-2xl border border-primary-500/20 bg-primary-500/5 p-6 backdrop-blur-xl"
+      >
         <div className="flex items-center gap-2 mb-3">
           <div className="rounded-lg bg-primary-500/15 p-1.5 text-primary-400"><Sparkles className="h-4 w-4" /></div>
           <h3 className="font-display text-base font-semibold text-white">AI Financial Summary</h3>
@@ -224,7 +241,7 @@ export default function ReportsPage() {
           You have {fmt(metrics.outstandingInvoices)} in outstanding invoices — collecting these will strengthen your position.
           Your inventory is valued at {fmt(metrics.inventoryValue)} and total sales reached {fmt(metrics.totalSales)}.
         </p>
-      </div>
+      </motion.div>
     </div>
   );
 }

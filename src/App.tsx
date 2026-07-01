@@ -10,7 +10,6 @@ import VexaChatBot from "./components/VexaChatBot";
 import NotFound from "./components/ui/NotFound";
 import { apiClient } from "./lib/apiClient";
 
-// Eager-load landing + auth (critical path), lazy-load the rest
 import LandingPage from "./pages/LandingPage";
 import AuthPage from "./pages/AuthPage";
 
@@ -31,12 +30,13 @@ const AIPage = lazy(() => import("./pages/AIPage"));
 function PageLoader() {
   return (
     <div className="space-y-6">
-      <div className="h-8 w-48 rounded-lg shimmer" />
+      <div className="h-8 w-48 rounded-xl shimmer" />
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {Array.from({ length: 4 }).map((_, i) => (
           <div key={i} className="h-32 rounded-2xl shimmer" />
         ))}
       </div>
+      <div className="h-64 rounded-2xl shimmer" />
     </div>
   );
 }
@@ -45,6 +45,7 @@ function AppContent() {
   const { path } = useRouter();
   const { show } = useToast();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [quickAddOpen, setQuickAddOpen] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
   const [chatQuery, setChatQuery] = useState("");
@@ -54,7 +55,6 @@ function AppContent() {
 
   const triggerRefresh = useCallback(() => setRefreshKey((k) => k + 1), []);
 
-  // Fetch notification count and business name when in app
   useEffect(() => {
     const loadHeaderData = async () => {
       try {
@@ -70,6 +70,16 @@ function AppContent() {
     };
     if (path.startsWith("/app")) loadHeaderData();
   }, [path.startsWith("/app"), refreshKey]);
+
+  // Sync collapsed state with sidebar's localStorage
+  useEffect(() => {
+    const checkCollapsed = () => {
+      setSidebarCollapsed(localStorage.getItem("vexa-sidebar-collapsed") === "true");
+    };
+    checkCollapsed();
+    const interval = setInterval(checkCollapsed, 300);
+    return () => clearInterval(interval);
+  }, []);
 
   const handleAddTransaction = useCallback(
     async (tx: {
@@ -94,12 +104,18 @@ function AppContent() {
   if (isAuth) return <AuthPage onAuthed={triggerRefresh} />;
 
   if (path.startsWith("/app")) {
+    const mainPadding = sidebarCollapsed ? "lg:pl-[72px]" : "lg:pl-64";
+
     return (
       <div className="min-h-screen bg-neutral-950 text-neutral-200">
-        <div className="grid-bg pointer-events-none fixed inset-0 opacity-40" />
+        {/* Ambient background */}
+        <div className="grid-bg pointer-events-none fixed inset-0 opacity-30" />
+        <div className="ambient-orb bg-primary-500/10 h-96 w-96 -left-20 top-0" />
+        <div className="ambient-orb bg-secondary-500/10 h-96 w-96 right-0 top-1/3" />
+
         <div className="relative">
           <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} notificationCount={notificationCount} />
-          <div className="lg:pl-64">
+          <div className={`transition-all duration-300 ease-spring ${mainPadding}`}>
             <Header
               onMenuClick={() => setSidebarOpen(true)}
               onQuickAdd={() => setQuickAddOpen(true)}
@@ -130,7 +146,8 @@ function AppContent() {
               initial={{ opacity: 0, x: 320 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: 320 }}
-              className="fixed inset-y-0 right-0 z-50 w-full max-w-lg bg-neutral-950/90 border-l border-neutral-800 shadow-2xl backdrop-blur-2xl"
+              transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+              className="fixed inset-y-0 right-0 z-50 w-full max-w-lg border-l border-white/[0.06] bg-neutral-950/90 shadow-2xl backdrop-blur-2xl"
             >
               <VexaChatBot initialQuery={chatQuery} onClose={() => setChatOpen(false)} />
             </motion.div>
