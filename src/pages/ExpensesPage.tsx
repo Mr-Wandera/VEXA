@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { motion } from "motion/react";
+import { motion, AnimatePresence } from "motion/react";
 import { Receipt, Plus, TrendingDown, DollarSign, Trash2 } from "lucide-react";
 import { apiClient } from "../lib/apiClient";
 import { Expense } from "../types";
@@ -8,7 +8,9 @@ import { useToast } from "../components/ui/Toast";
 import ErrorState from "../components/ui/ErrorState";
 import Modal from "../components/ui/Modal";
 import PageHeader from "../components/ui/PageHeader";
+import SlideConfirm from "../components/ui/SlideConfirm";
 import { useCurrency } from "../lib/useCurrency";
+import { stagger, listItemVariants, cardEntrance } from "../lib/motion";
 
 const CATEGORIES = [
   "SaaS Infrastructure", "Cloud Servers", "Developer Tools", "Design Software",
@@ -144,12 +146,15 @@ export default function ExpensesPage() {
                 <p className="text-sm text-neutral-400">No expenses recorded yet.</p>
               </div>
             ) : (
-              expenses.map((exp, i) => (
+              <AnimatePresence mode="popLayout">
+              {expenses.map((exp) => (
                 <motion.div
                   key={exp.id}
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: i * 0.03 }}
+                  layout
+                  variants={listItemVariants}
+                  initial="hidden"
+                  animate="visible"
+                  exit="exit"
                   className="group flex items-center justify-between rounded-xl border border-white/[0.04] bg-white/[0.015] p-4 transition hover:border-neutral-700"
                 >
                   <div className="flex items-center gap-3">
@@ -171,7 +176,8 @@ export default function ExpensesPage() {
                     </button>
                   </div>
                 </motion.div>
-              ))
+              ))}
+              </AnimatePresence>
             )}
           </div>
         </motion.div>
@@ -264,10 +270,15 @@ export default function ExpensesPage() {
           Are you sure you want to delete this expense record?
           This action cannot be undone.
         </p>
-        <div className="mt-6 flex justify-end gap-3">
-          <button type="button" onClick={() => setConfirmDelete(null)} className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-2.5 text-xs font-semibold text-neutral-400 hover:text-white transition">Cancel</button>
-          <button type="button" onClick={handleDelete} className="btn-press rounded-xl bg-error-600 px-5 py-2.5 text-xs font-semibold text-white hover:bg-error-500 transition">Delete</button>
+        <div className="mt-6">
+          <SlideConfirm
+            onConfirm={async () => { await handleDelete(); }}
+            label="Slide to delete"
+            confirmingLabel="Deleting..."
+            doneLabel="Deleted"
+          />
         </div>
+        <button type="button" onClick={() => setConfirmDelete(null)} className="mt-3 w-full rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-2.5 text-xs font-semibold text-neutral-400 hover:text-white transition">Cancel</button>
       </Modal>
     </div>
   );

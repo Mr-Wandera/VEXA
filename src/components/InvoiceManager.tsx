@@ -1,14 +1,16 @@
 import { useState, useEffect } from "react";
-import { motion } from "motion/react";
+import { motion, AnimatePresence } from "motion/react";
 import { FileText, Plus, CircleCheck as CheckCircle, Clock, TriangleAlert as AlertTriangle, Sparkles, Check, Trash2 } from "lucide-react";
 import { apiClient } from "../lib/apiClient";
 import { Invoice, Client } from "../types";
 import PageHeader from "./ui/PageHeader";
 import ErrorState from "./ui/ErrorState";
 import Modal from "./ui/Modal";
+import SlideConfirm from "./ui/SlideConfirm";
 import { useToast } from "./ui/Toast";
 import { useRouter } from "../lib/router";
 import { useCurrency } from "../lib/useCurrency";
+import { EASE, DURATION, stagger, listItemVariants } from "../lib/motion";
 
 export default function InvoiceManager() {
   const { show } = useToast();
@@ -138,8 +140,14 @@ export default function InvoiceManager() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/[0.03]">
-                {filteredInvoices.map((inv) => (
-                  <tr key={inv.id} className="group transition hover:bg-white/[0.015]">
+                {filteredInvoices.map((inv, i) => (
+                  <motion.tr
+                    key={inv.id}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: i * 0.03, duration: DURATION.normal, ease: EASE.spring }}
+                    className="group transition hover:bg-white/[0.015]"
+                  >
                     <td className="py-3.5 px-4 font-mono text-xs font-semibold text-neutral-300">{inv.invoiceNumber}</td>
                     <td className="py-3.5 px-4 text-sm font-semibold text-white">{inv.client}</td>
                     <td className="py-3.5 px-4 font-mono text-xs text-neutral-400">{inv.dueDate}</td>
@@ -173,7 +181,7 @@ export default function InvoiceManager() {
                         </button>
                       </div>
                     </td>
-                  </tr>
+                  </motion.tr>
                 ))}
               </tbody>
             </table>
@@ -218,10 +226,15 @@ export default function InvoiceManager() {
           Are you sure you want to delete invoice <span className="font-semibold text-white">{confirmDelete?.invoiceNumber}</span> for <span className="font-semibold text-white">{confirmDelete?.client}</span>?
           This action cannot be undone.
         </p>
-        <div className="mt-6 flex justify-end gap-3">
-          <button type="button" onClick={() => setConfirmDelete(null)} className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-2.5 text-xs font-semibold text-neutral-400 hover:text-white transition">Cancel</button>
-          <button type="button" onClick={handleDelete} className="btn-press rounded-xl bg-error-600 px-5 py-2.5 text-xs font-semibold text-white hover:bg-error-500 transition">Delete</button>
+        <div className="mt-6">
+          <SlideConfirm
+            onConfirm={async () => { await handleDelete(); }}
+            label="Slide to delete"
+            confirmingLabel="Deleting..."
+            doneLabel="Deleted"
+          />
         </div>
+        <button type="button" onClick={() => setConfirmDelete(null)} className="mt-3 w-full rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-2.5 text-xs font-semibold text-neutral-400 hover:text-white transition">Cancel</button>
       </Modal>
     </div>
   );

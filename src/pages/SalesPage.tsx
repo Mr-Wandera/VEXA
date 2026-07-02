@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { motion } from "motion/react";
+import { motion, AnimatePresence } from "motion/react";
 import { ShoppingCart, Plus, TrendingUp, DollarSign, Sparkles, Trash2, RotateCcw, Check } from "lucide-react";
 import { apiClient } from "../lib/apiClient";
 import { Sale, Product } from "../types";
@@ -7,8 +7,10 @@ import StatCard from "../components/ui/StatCard";
 import PageHeader from "../components/ui/PageHeader";
 import ErrorState from "../components/ui/ErrorState";
 import Modal from "../components/ui/Modal";
+import SlideConfirm from "../components/ui/SlideConfirm";
 import { useToast } from "../components/ui/Toast";
 import { useCurrency } from "../lib/useCurrency";
+import { EASE, DURATION, stagger, listItemVariants } from "../lib/motion";
 
 export default function SalesPage() {
   const { show } = useToast();
@@ -184,8 +186,14 @@ export default function SalesPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/[0.03]">
-                  {filteredSales.map((sale) => (
-                    <tr key={sale.id} className="group hover:bg-white/[0.015] transition">
+                  {filteredSales.map((sale, i) => (
+                    <motion.tr
+                      key={sale.id}
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: i * 0.03, duration: DURATION.normal, ease: EASE.spring }}
+                      className="group hover:bg-white/[0.015] transition"
+                    >
                       <td className="py-3 px-4 font-mono text-xs text-neutral-400">{sale.date}</td>
                       <td className="py-3 px-4 text-sm font-medium text-white">{sale.productName}</td>
                       <td className="py-3 px-4 text-sm text-neutral-300">{sale.customerName}</td>
@@ -223,7 +231,7 @@ export default function SalesPage() {
                           </button>
                         </div>
                       </td>
-                    </tr>
+                    </motion.tr>
                   ))}
                 </tbody>
               </table>
@@ -231,26 +239,37 @@ export default function SalesPage() {
 
             {/* Mobile cards */}
             <div className="mt-4 space-y-3 md:hidden">
-              {filteredSales.map((sale) => (
-                <div key={sale.id} className="rounded-xl border border-white/[0.04] bg-white/[0.015] p-4">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-white">{sale.productName}</p>
-                      <p className="text-xs text-neutral-500">{sale.customerName} · {sale.date}</p>
+              <AnimatePresence mode="popLayout">
+                {filteredSales.map((sale, i) => (
+                  <motion.div
+                    key={sale.id}
+                    layout
+                    variants={listItemVariants}
+                    initial="hidden"
+                    animate="visible"
+                    exit="exit"
+                    transition={{ delay: i * 0.03 }}
+                    className="rounded-xl border border-white/[0.04] bg-white/[0.015] p-4"
+                  >
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-white">{sale.productName}</p>
+                        <p className="text-xs text-neutral-500">{sale.customerName} · {sale.date}</p>
+                      </div>
+                      <p className="font-mono text-sm font-semibold text-white">{currency} {sale.totalAmount.toLocaleString()}</p>
                     </div>
-                    <p className="font-mono text-sm font-semibold text-white">{currency} {sale.totalAmount.toLocaleString()}</p>
-                  </div>
-                  <div className="mt-2 flex items-center gap-2 text-xs">
-                    <span className="rounded-full bg-neutral-800 px-2 py-0.5 text-[10px] font-semibold uppercase text-neutral-300">{sale.paymentMethod}</span>
-                    <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase ${
-                      sale.status === "completed" ? "bg-success-500/10 text-success-400"
-                        : sale.status === "pending" ? "bg-warning-500/10 text-warning-400"
-                        : "bg-error-500/10 text-error-400"
-                    }`}>{sale.status}</span>
-                    <span className="text-neutral-500">{sale.quantity}x @ {currency} {sale.unitPrice.toLocaleString()}</span>
-                  </div>
-                </div>
-              ))}
+                    <div className="mt-2 flex items-center gap-2 text-xs">
+                      <span className="rounded-full bg-neutral-800 px-2 py-0.5 text-[10px] font-semibold uppercase text-neutral-300">{sale.paymentMethod}</span>
+                      <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase ${
+                        sale.status === "completed" ? "bg-success-500/10 text-success-400"
+                          : sale.status === "pending" ? "bg-warning-500/10 text-warning-400"
+                          : "bg-error-500/10 text-error-400"
+                      }`}>{sale.status}</span>
+                      <span className="text-neutral-500">{sale.quantity}x @ {currency} {sale.unitPrice.toLocaleString()}</span>
+                    </div>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
             </div>
           </>
         )}
@@ -330,10 +349,15 @@ export default function SalesPage() {
           Are you sure you want to delete this sale of <span className="font-semibold text-white">{confirmDelete?.productName}</span> ({currency} {confirmDelete?.totalAmount.toLocaleString()})?
           This action cannot be undone.
         </p>
-        <div className="mt-6 flex justify-end gap-3">
-          <button type="button" onClick={() => setConfirmDelete(null)} className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-2.5 text-xs font-semibold text-neutral-400 hover:text-white transition">Cancel</button>
-          <button type="button" onClick={handleDelete} className="btn-press rounded-xl bg-error-600 px-5 py-2.5 text-xs font-semibold text-white hover:bg-error-500 transition">Delete</button>
+        <div className="mt-6">
+          <SlideConfirm
+            onConfirm={async () => { await handleDelete(); }}
+            label="Slide to delete"
+            confirmingLabel="Deleting..."
+            doneLabel="Deleted"
+          />
         </div>
+        <button type="button" onClick={() => setConfirmDelete(null)} className="mt-3 w-full rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-2.5 text-xs font-semibold text-neutral-400 hover:text-white transition">Cancel</button>
       </Modal>
     </div>
   );

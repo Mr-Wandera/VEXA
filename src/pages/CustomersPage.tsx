@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { motion } from "motion/react";
+import { motion, AnimatePresence } from "motion/react";
 import { Users, Plus, Mail, Phone, DollarSign, UserPlus, Pencil, Trash2 } from "lucide-react";
 import { apiClient } from "../lib/apiClient";
 import { Client } from "../types";
@@ -8,7 +8,9 @@ import { useToast } from "../components/ui/Toast";
 import ErrorState from "../components/ui/ErrorState";
 import Modal from "../components/ui/Modal";
 import PageHeader from "../components/ui/PageHeader";
+import SlideConfirm from "../components/ui/SlideConfirm";
 import { useCurrency } from "../lib/useCurrency";
+import { stagger, listItemVariants } from "../lib/motion";
 
 const EMPTY_FORM = { name: "", email: "", phone: "", status: "active" as "active" | "inactive" };
 
@@ -119,13 +121,19 @@ export default function CustomersPage() {
           <button onClick={openAdd} className="mt-3 text-sm font-medium text-primary-400 hover:text-primary-300 transition">Add your first customer →</button>
         </div>
       ) : (
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {clients.map((client, i) => (
+      <motion.div
+        variants={stagger(0.04, 0.1)}
+        initial="hidden"
+        animate="visible"
+        className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3"
+      >
+        <AnimatePresence mode="popLayout">
+        {clients.map((client) => (
           <motion.div
             key={client.id}
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.04 }}
+            layout
+            variants={listItemVariants}
+            exit="exit"
             className="card-hover group rounded-2xl border border-white/[0.06] bg-white/[0.025] p-5 backdrop-blur-xl transition hover:border-neutral-700"
           >
             <div className="flex items-start justify-between">
@@ -178,7 +186,8 @@ export default function CustomersPage() {
             </div>
           </motion.div>
         ))}
-      </div>
+        </AnimatePresence>
+      </motion.div>
       )}
 
       <Modal isOpen={showAdd} onClose={() => setShowAdd(false)} title={editing ? "Edit Customer" : "Add New Customer"}>
@@ -214,10 +223,15 @@ export default function CustomersPage() {
           Are you sure you want to delete <span className="font-semibold text-white">{confirmDelete?.name}</span>?
           This action cannot be undone.
         </p>
-        <div className="mt-6 flex justify-end gap-3">
-          <button type="button" onClick={() => setConfirmDelete(null)} className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-2.5 text-xs font-semibold text-neutral-400 hover:text-white transition">Cancel</button>
-          <button type="button" onClick={handleDelete} className="btn-press rounded-xl bg-error-600 px-5 py-2.5 text-xs font-semibold text-white hover:bg-error-500 transition">Delete</button>
+        <div className="mt-6">
+          <SlideConfirm
+            onConfirm={async () => { await handleDelete(); }}
+            label="Slide to delete"
+            confirmingLabel="Deleting..."
+            doneLabel="Deleted"
+          />
         </div>
+        <button type="button" onClick={() => setConfirmDelete(null)} className="mt-3 w-full rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-2.5 text-xs font-semibold text-neutral-400 hover:text-white transition">Cancel</button>
       </Modal>
     </div>
   );

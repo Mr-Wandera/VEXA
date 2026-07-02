@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import { motion } from "motion/react";
-import { Package, Plus, TriangleAlert as AlertTriangle, DollarSign, Boxes, Pencil, Trash2 } from "lucide-react";
+import { motion, AnimatePresence } from "motion/react";
+import { Package, Plus, TriangleAlert as AlertTriangle, DollarSign, Boxes, Pencil, Trash2, RotateCcw } from "lucide-react";
 import { apiClient } from "../lib/apiClient";
 import { Product } from "../types";
 import StatCard from "../components/ui/StatCard";
@@ -8,7 +8,10 @@ import { useToast } from "../components/ui/Toast";
 import ErrorState from "../components/ui/ErrorState";
 import Modal from "../components/ui/Modal";
 import PageHeader from "../components/ui/PageHeader";
+import SwipeAction, { type SwipeActionDef } from "../components/ui/SwipeAction";
+import SlideConfirm from "../components/ui/SlideConfirm";
 import { useCurrency } from "../lib/useCurrency";
+import { EASE, DURATION, stagger, listItemVariants, cardEntrance, hoverLift } from "../lib/motion";
 
 const EMPTY_FORM = {
   name: "", sku: "", category: "", price: "", cost: "", stock: "", reorderLevel: "10", unit: "pcs",
@@ -174,7 +177,12 @@ export default function InventoryPage() {
           </div>
         </div>
 
-        <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <motion.div
+          variants={stagger(0.04, 0.1)}
+          initial="hidden"
+          animate="visible"
+          className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3"
+        >
           {filteredProducts.length === 0 ? (
             <div className="col-span-full flex flex-col items-center justify-center py-16 text-center">
               <div className="mb-3 rounded-2xl bg-white/[0.02] p-4">
@@ -183,71 +191,82 @@ export default function InventoryPage() {
               <p className="text-sm text-neutral-400">No products found.</p>
             </div>
           ) : (
-            filteredProducts.map((product, i) => {
-              const isLow = product.stock > 0 && product.stock <= product.reorderLevel;
-              const isOut = product.stock === 0;
-              const margin = product.price > 0 ? Math.round(((product.price - product.cost) / product.price) * 100) : 0;
+            <AnimatePresence mode="popLayout">
+              {filteredProducts.map((product) => {
+                const isLow = product.stock > 0 && product.stock <= product.reorderLevel;
+                const isOut = product.stock === 0;
+                const margin = product.price > 0 ? Math.round(((product.price - product.cost) / product.price) * 100) : 0;
 
-              return (
-                <motion.div
-                  key={product.id}
-                  initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.03 }}
-                  className="group rounded-xl border border-white/[0.06] bg-white/[0.015] p-4 transition hover:border-neutral-700"
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="min-w-0">
-                      <h4 className="font-display text-sm font-semibold text-white truncate">{product.name}</h4>
-                      <p className="mt-0.5 font-mono text-[10px] text-neutral-500">{product.sku} · {product.category}</p>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <button
-                        onClick={() => openEdit(product)}
-                        className="rounded-lg p-1.5 text-neutral-500 opacity-0 transition hover:bg-white/[0.04] hover:text-white group-hover:opacity-100"
-                        aria-label="Edit product"
-                      >
-                        <Pencil className="h-3.5 w-3.5" />
-                      </button>
-                      <button
-                        onClick={() => setConfirmDelete(product)}
-                        className="rounded-lg p-1.5 text-neutral-500 opacity-0 transition hover:bg-error-500/10 hover:text-error-400 group-hover:opacity-100"
-                        aria-label="Delete product"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
-                    </div>
-                  </div>
+                const swipeActions: SwipeActionDef[] = [
+                  { icon: Pencil, color: "text-white", bgColor: "bg-secondary-600", onClick: () => openEdit(product) },
+                  { icon: Trash2, color: "text-white", bgColor: "bg-error-600", onClick: () => setConfirmDelete(product) },
+                ];
 
-                  <div className={`mt-2 inline-flex rounded-lg px-2 py-0.5 text-[10px] font-semibold ${
-                    isOut ? "bg-error-500/10 text-error-400" : isLow ? "bg-warning-500/10 text-warning-400" : "bg-success-500/10 text-success-400"
-                  }`}>
-                    {isOut ? "OUT OF STOCK" : isLow ? "LOW STOCK" : "IN STOCK"}
-                  </div>
+                return (
+                  <motion.div
+                    key={product.id}
+                    layout
+                    variants={listItemVariants}
+                    exit="exit"
+                  >
+                    <SwipeAction actions={swipeActions} threshold={60}>
+                      <div className="group rounded-xl border border-white/[0.06] bg-white/[0.015] p-4 transition hover:border-neutral-700">
+                        <div className="flex items-start justify-between">
+                          <div className="min-w-0">
+                            <h4 className="font-display text-sm font-semibold text-white truncate">{product.name}</h4>
+                            <p className="mt-0.5 font-mono text-[10px] text-neutral-500">{product.sku} · {product.category}</p>
+                          </div>
+                          <div className="hidden items-center gap-1 sm:flex">
+                            <button
+                              onClick={() => openEdit(product)}
+                              className="rounded-lg p-1.5 text-neutral-500 opacity-0 transition hover:bg-white/[0.04] hover:text-white group-hover:opacity-100"
+                              aria-label="Edit product"
+                            >
+                              <Pencil className="h-3.5 w-3.5" />
+                            </button>
+                            <button
+                              onClick={() => setConfirmDelete(product)}
+                              className="rounded-lg p-1.5 text-neutral-500 opacity-0 transition hover:bg-error-500/10 hover:text-error-400 group-hover:opacity-100"
+                              aria-label="Delete product"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+                        </div>
 
-                  <div className="mt-3 flex items-end justify-between">
-                    <div>
-                      <span className="font-mono text-lg font-semibold text-white">{currency} {product.price.toLocaleString()}</span>
-                      <span className="ml-1 text-xs text-neutral-500">/{product.unit}</span>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-xs text-neutral-400">{product.stock} {product.unit} in stock</p>
-                      <p className="text-[10px] text-neutral-500">{margin}% margin</p>
-                    </div>
-                  </div>
+                        <div className={`mt-2 inline-flex rounded-lg px-2 py-0.5 text-[10px] font-semibold ${
+                          isOut ? "bg-error-500/10 text-error-400" : isLow ? "bg-warning-500/10 text-warning-400" : "bg-success-500/10 text-success-400"
+                        }`}>
+                          {isOut ? "OUT OF STOCK" : isLow ? "LOW STOCK" : "IN STOCK"}
+                        </div>
 
-                  {/* Stock bar */}
-                  <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-neutral-800">
-                    <div
-                      className={`h-full rounded-full transition-all ${isOut ? "bg-error-500" : isLow ? "bg-warning-500" : "bg-success-500"}`}
-                      style={{ width: `${Math.min(100, (product.stock / (product.reorderLevel * 3 || 100)) * 100)}%` }}
-                    />
-                  </div>
-                </motion.div>
-              );
-            })
+                        <div className="mt-3 flex items-end justify-between">
+                          <div>
+                            <span className="font-mono text-lg font-semibold text-white">{currency} {product.price.toLocaleString()}</span>
+                            <span className="ml-1 text-xs text-neutral-500">/{product.unit}</span>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-xs text-neutral-400">{product.stock} {product.unit} in stock</p>
+                            <p className="text-[10px] text-neutral-500">{margin}% margin</p>
+                          </div>
+                        </div>
+
+                        <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-neutral-800">
+                          <motion.div
+                            initial={{ width: 0 }}
+                            animate={{ width: `${Math.min(100, (product.stock / (product.reorderLevel * 3 || 100)) * 100)}%` }}
+                            transition={{ duration: 0.6, ease: EASE.spring }}
+                            className={`h-full rounded-full ${isOut ? "bg-error-500" : isLow ? "bg-warning-500" : "bg-success-500"}`}
+                          />
+                        </div>
+                      </div>
+                    </SwipeAction>
+                  </motion.div>
+                );
+              })}
+            </AnimatePresence>
           )}
-        </div>
+        </motion.div>
       </motion.div>
 
       {/* Add/Edit Product Modal */}
@@ -310,18 +329,20 @@ export default function InventoryPage() {
         </form>
       </Modal>
 
-      {/* Delete confirmation */}
       <Modal isOpen={!!confirmDelete} onClose={() => setConfirmDelete(null)} title="Delete Product" maxWidth="max-w-md">
         <p className="text-sm text-neutral-300">
           Are you sure you want to delete <span className="font-semibold text-white">{confirmDelete?.name}</span>?
           This action cannot be undone.
         </p>
-        <div className="mt-6 flex justify-end gap-3">
-          <button type="button" onClick={() => setConfirmDelete(null)} className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-2.5 text-xs font-semibold text-neutral-400 hover:text-white transition">Cancel</button>
-          <button type="button" onClick={handleDelete} className="btn-press rounded-xl bg-error-600 px-5 py-2.5 text-xs font-semibold text-white hover:bg-error-500 transition">
-            Delete
-          </button>
+        <div className="mt-6">
+          <SlideConfirm
+            onConfirm={async () => { await handleDelete(); }}
+            label="Slide to delete"
+            confirmingLabel="Deleting..."
+            doneLabel="Deleted"
+          />
         </div>
+        <button type="button" onClick={() => setConfirmDelete(null)} className="mt-3 w-full rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-2.5 text-xs font-semibold text-neutral-400 hover:text-white transition">Cancel</button>
       </Modal>
     </div>
   );

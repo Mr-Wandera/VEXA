@@ -1,13 +1,15 @@
 import { useState, useEffect } from "react";
-import { motion } from "motion/react";
+import { motion, AnimatePresence } from "motion/react";
 import { Bell, CircleAlert as AlertCircle, CircleCheck as CheckCircle, Info, Sparkles, Check, Trash2 } from "lucide-react";
 import { apiClient } from "../lib/apiClient";
 import { Notification } from "../types";
 import ErrorState from "../components/ui/ErrorState";
 import Modal from "../components/ui/Modal";
 import PageHeader from "../components/ui/PageHeader";
+import SlideConfirm from "../components/ui/SlideConfirm";
 import { useToast } from "../components/ui/Toast";
 import { useRouter } from "../lib/router";
+import { stagger, listItemVariants, notificationEntrance } from "../lib/motion";
 
 const ACTION_ROUTES: Record<string, string> = {
   remind_overdue_inv_104: "/app/invoices",
@@ -129,7 +131,12 @@ export default function NotificationsPage() {
         </div>
       </div>
 
-      <div className="space-y-3">
+      <motion.div
+        variants={stagger(0.05, 0.1)}
+        initial="hidden"
+        animate="visible"
+        className="space-y-3"
+      >
         {filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-center">
             <div className="mb-3 rounded-2xl bg-white/[0.02] p-4">
@@ -138,14 +145,17 @@ export default function NotificationsPage() {
             <p className="text-sm text-neutral-400">{emptyMessage}</p>
           </div>
         ) : (
-          filtered.map((notif, i) => {
+          <AnimatePresence mode="popLayout">
+          {filtered.map((notif) => {
             const Icon = getIcon(notif.type);
             return (
               <motion.div
                 key={notif.id}
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: i * 0.05 }}
+                layout
+                variants={{ ...notificationEntrance, ...listItemVariants }}
+                initial="hidden"
+                animate="visible"
+                exit="exit"
                 className={`group flex items-start gap-4 rounded-2xl border p-5 backdrop-blur-xl transition ${
                   notif.read ? "border-white/[0.04] bg-white/[0.015]" : "border-white/[0.06] bg-white/[0.03]"
                 }`}
@@ -188,19 +198,25 @@ export default function NotificationsPage() {
                 </div>
               </motion.div>
             );
-          })
+          })}
+          </AnimatePresence>
         )}
-      </div>
+      </motion.div>
 
       <Modal isOpen={!!confirmDelete} onClose={() => setConfirmDelete(null)} title="Delete Notification" maxWidth="max-w-md">
         <p className="text-sm text-neutral-300">
           Are you sure you want to delete this notification?
           This action cannot be undone.
         </p>
-        <div className="mt-6 flex justify-end gap-3">
-          <button type="button" onClick={() => setConfirmDelete(null)} className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-2.5 text-xs font-semibold text-neutral-400 hover:text-white transition">Cancel</button>
-          <button type="button" onClick={handleDelete} className="btn-press rounded-xl bg-error-600 px-5 py-2.5 text-xs font-semibold text-white hover:bg-error-500 transition">Delete</button>
+        <div className="mt-6">
+          <SlideConfirm
+            onConfirm={async () => { await handleDelete(); }}
+            label="Slide to delete"
+            confirmingLabel="Deleting..."
+            doneLabel="Deleted"
+          />
         </div>
+        <button type="button" onClick={() => setConfirmDelete(null)} className="mt-3 w-full rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-2.5 text-xs font-semibold text-neutral-400 hover:text-white transition">Cancel</button>
       </Modal>
     </div>
   );

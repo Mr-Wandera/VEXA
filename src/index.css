@@ -374,3 +374,130 @@ html {
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
+
+/* ─── Reduced motion: strip all animation ─────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ─── New keyframes for communicative motion ─── */
+
+/* Card highlight — briefly flashes when data changes */
+@keyframes highlightPulse {
+  0% { background-color: rgba(16, 185, 129, 0.08); }
+  100% { background-color: transparent; }
+}
+.highlight-pulse {
+  animation: highlightPulse 1.2s ease-out;
+}
+
+/* Success ring — checkmark confirmation */
+@keyframes successRing {
+  0% { transform: scale(0.5); opacity: 0; }
+  50% { transform: scale(1.15); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+.success-ring {
+  animation: successRing 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* Soft glow pulse for live indicators */
+@keyframes softGlowPulse {
+  0%, 100% { opacity: 0.5; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.1); }
+}
+.soft-glow-pulse {
+  animation: softGlowPulse 2.5s ease-in-out infinite;
+}
+
+/* Slide-to-confirm track shimmer */
+@keyframes trackShimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.track-shimmer {
+  background: linear-gradient(90deg,
+    rgba(244, 63, 94, 0.1) 25%,
+    rgba(244, 63, 94, 0.25) 50%,
+    rgba(244, 63, 94, 0.1) 75%);
+  background-size: 200% 100%;
+  animation: trackShimmer 2s linear infinite;
+}
+
+/* Cursor glow follow */
+.cursor-glow {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  filter: blur(40px);
+  z-index: 0;
+}
+.cursor-glow.visible {
+  opacity: 0.12;
+}
+
+/* Smooth scroll with momentum */
+.smooth-scroll {
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
+/* Stagger fade for progressive content reveal */
+@keyframes staggerFade {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.stagger-fade > * {
+  animation: staggerFade 0.4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  opacity: 0;
+}
+.stagger-fade > *:nth-child(1) { animation-delay: 0.02s; }
+.stagger-fade > *:nth-child(2) { animation-delay: 0.06s; }
+.stagger-fade > *:nth-child(3) { animation-delay: 0.1s; }
+.stagger-fade > *:nth-child(4) { animation-delay: 0.14s; }
+.stagger-fade > *:nth-child(5) { animation-delay: 0.18s; }
+.stagger-fade > *:nth-child(6) { animation-delay: 0.22s; }
+.stagger-fade > *:nth-child(7) { animation-delay: 0.26s; }
+.stagger-fade > *:nth-child(8) { animation-delay: 0.3s; }
+
+/* Number change flash */
+@keyframes numberFlash {
+  0% { color: #34d399; transform: scale(1.05); }
+  100% { color: inherit; transform: scale(1); }
+}
+.number-flash {
+  animation: numberFlash 0.6s ease-out;
+}
+
+/* Expand-in for modals and expanding cards */
+@keyframes expandIn {
+  from { transform: scale(0.92); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+.expand-in {
+  animation: expandIn 0.3s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* Gentle bounce for pull-to-refresh */
+@keyframes pullRelease {
+  0% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+  100% { transform: translateY(0); }
+}
+.pull-release {
+  animation: pullRelease 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Swipe action reveal background */
+.swipe-action-bg {
+  transition: opacity 0.2s ease;
+}
+
