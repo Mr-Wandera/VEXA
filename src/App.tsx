@@ -2,6 +2,7 @@ import { useState, useEffect, lazy, Suspense, useCallback } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { RouterProvider, useRouter, matchRoute } from "./lib/router";
 import { ToastProvider, useToast } from "./components/ui/Toast";
+import { AuthProvider, useAuth } from "./lib/auth";
 import Sidebar from "./components/Sidebar";
 import Header from "./components/Header";
 import PageTransition from "./components/ui/PageTransition";
@@ -42,8 +43,9 @@ function PageLoader() {
 }
 
 function AppContent() {
-  const { path } = useRouter();
+  const { path, navigate } = useRouter();
   const { show } = useToast();
+  const { session, loading: authLoading } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
     if (typeof window !== 'undefined') return localStorage.getItem("vexa-sidebar-collapsed") === "true";
@@ -58,8 +60,30 @@ function AppContent() {
 
   const triggerRefresh = useCallback(() => setRefreshKey((k) => k + 1), []);
 
+  const isAuthed = !!session;
+  const isLanding = path === "/" || path === "";
+  const isAuth = path === "/auth";
+
+  useEffect(() => {
+    // If auth is still loading, don't redirect yet
+    if (authLoading) return;
+
+    // If on an app route but not authed, go to auth
+    if (path.startsWith("/app") && !isAuthed) {
+      navigate("/auth");
+      return;
+    }
+
+    // If authed and on landing or auth, go to dashboard
+    if (isAuthed && (isLanding || isAuth)) {
+      navigate("/app/dashboard");
+      return;
+    }
+  }, [authLoading, isAuthed, path, isLanding, isAuth, navigate]);
+
   useEffect(() => {
     const loadHeaderData = async () => {
+      if (!isAuthed || !path.startsWith("/app")) return;
       try {
         const [notifs, { profile }] = await Promise.all([
           apiClient.getNotifications(),
@@ -71,8 +95,8 @@ function AppContent() {
         console.error("Failed to load header data:", err);
       }
     };
-    if (path.startsWith("/app")) loadHeaderData();
-  }, [path.startsWith("/app"), refreshKey]);
+    loadHeaderData();
+  }, [path.startsWith("/app"), isAuthed, refreshKey]);
 
   const handleSidebarCollapse = useCallback((collapsed: boolean) => {
     setSidebarCollapsed(collapsed);
@@ -94,13 +118,24 @@ function AppContent() {
     [triggerRefresh, show]
   );
 
-  const isLanding = path === "/" || path === "";
-  const isAuth = path === "/auth";
+  // Show a loader while auth state is being determined
+  if (authLoading && (isLanding || isAuth || path.startsWith("/app"))) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-neutral-950">
+        <div className="flex flex-col items-center gap-4">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-tr from-primary-500 to-secondary-500 shadow-lg shadow-primary-500/20">
+            <span className="h-6 w-6 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+          </div>
+          <p className="font-mono text-xs uppercase tracking-wider text-neutral-500">Loading VEXA</p>
+        </div>
+      </div>
+    );
+  }
 
   if (isLanding) return <LandingPage />;
-  if (isAuth) return <AuthPage onAuthed={triggerRefresh} />;
+  if (isAuth) return <AuthPage />;
 
-  if (path.startsWith("/app")) {
+  if (path.startsWith("/app") && isAuthed) {
     const mainPadding = sidebarCollapsed ? "lg:pl-[72px]" : "lg:pl-64";
 
     return (
@@ -180,9 +215,11 @@ function renderAppPage(
 export default function App() {
   return (
     <RouterProvider>
-      <ToastProvider>
-        <AppContent />
-      </ToastProvider>
+      <AuthProvider>
+        <ToastProvider>
+          <AppContent />
+        </ToastProvider>
+      </AuthProvider>
     </RouterProvider>
   );
 }

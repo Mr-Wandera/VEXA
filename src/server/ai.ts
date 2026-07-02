@@ -1,6 +1,5 @@
 import { GoogleGenAI, Type } from "@google/genai";
-import { repository } from "./repository.ts";
-import type { VexaInsight, Transaction, Invoice, Client, DashboardMetrics, BusinessProfile } from "../types.ts";
+import type { VexaInsight, Transaction, Invoice, DashboardMetrics, BusinessProfile } from "../types.ts";
 
 const apiKey = process.env.GEMINI_API_KEY;
 
@@ -42,12 +41,9 @@ async function generateContentWithFallback(
   throw lastError;
 }
 
-// Fallback insights — use real repository data, not hardcoded stale values
-async function getFallbackInsights(): Promise<VexaInsight[]> {
-  const metrics = await repository.getMetrics();
-  const profile = await repository.getProfile();
-  const invoices = await repository.getInvoices();
-  const products = await repository.getProducts();
+// Fallback insights — use the context passed from the frontend
+function getFallbackInsights(ctx: AIContext): VexaInsight[] {
+  const { metrics, profile, invoices, products } = ctx;
   const currency = profile.currency || "KSh";
 
   const insights: VexaInsight[] = [];
@@ -103,15 +99,20 @@ async function getFallbackInsights(): Promise<VexaInsight[]> {
   return insights;
 }
 
-export async function generateVexaInsights(): Promise<VexaInsight[]> {
+export interface AIContext {
+  metrics: DashboardMetrics;
+  profile: BusinessProfile;
+  invoices: Invoice[];
+  transactions: Transaction[];
+  products: { id: string; name: string; stock: number; unit: string; reorderLevel: number }[];
+}
+
+export async function generateVexaInsights(ctx: AIContext): Promise<VexaInsight[]> {
   const client = getAIClient();
-  if (!client) return getFallbackInsights();
+  if (!client) return getFallbackInsights(ctx);
 
   try {
-    const metrics = await repository.getMetrics();
-    const profile = await repository.getProfile();
-    const invoices = await repository.getInvoices();
-    const transactions = await repository.getTransactions();
+    const { metrics, profile, invoices, transactions } = ctx;
     const currency = profile.currency || "KSh";
 
     const businessContext = `
@@ -162,14 +163,14 @@ export async function generateVexaInsights(): Promise<VexaInsight[]> {
         return parsed.map((item: any, idx: number) => ({ id: `ins-gen-${idx}-${Date.now()}`, ...item }));
       }
     }
-    return getFallbackInsights();
+    return getFallbackInsights(ctx);
   } catch (error) {
     console.error("Gemini insight generation failed, using fallback:", error);
-    return getFallbackInsights();
+    return getFallbackInsights(ctx);
   }
 }
 
-export async function analyzeTransaction(transaction: Transaction): Promise<string> {
+export async function analyzeTransaction(transaction: Transaction, profile: BusinessProfile): Promise<string> {
   const client = getAIClient();
   if (!client) {
     return transaction.type === 'expense'
@@ -178,7 +179,6 @@ export async function analyzeTransaction(transaction: Transaction): Promise<stri
   }
 
   try {
-    const profile = await repository.getProfile();
     const currency = profile.currency || "KSh";
     const response = await generateContentWithFallback(client, {
       model: VALID_MODELS[0],
@@ -191,17 +191,17 @@ export async function analyzeTransaction(transaction: Transaction): Promise<stri
   }
 }
 
-export async function chatWithVexa(userMessage: string, history: { role: 'user' | 'model'; parts: { text: string }[] }[]): Promise<string> {
+export async function chatWithVexa(
+  userMessage: string,
+  history: { role: 'user' | 'model'; parts: { text: string }[] }[],
+  ctx: AIContext
+): Promise<string> {
   const client = getAIClient();
 
-  if (!client) return simulateVexaChat(userMessage);
+  if (!client) return simulateVexaChat(userMessage, ctx);
 
   try {
-    const metrics = await repository.getMetrics();
-    const profile = await repository.getProfile();
-    const invoices = await repository.getInvoices();
-    const transactions = await repository.getTransactions();
-    const products = await repository.getProducts();
+    const { metrics, profile, invoices, transactions, products } = ctx;
     const currency = profile.currency || "KSh";
 
     const systemInstructions = `You are VEXA AI, an elite virtual CFO for ${profile.name} (${profile.industry}).
@@ -233,16 +233,13 @@ Rules: Reference real numbers. Use ${currency}. Be concise, executive-grade. Use
     return response.text?.trim() || "I apologize. I couldn't process that. Please try again.";
   } catch (error) {
     console.error("Gemini chat failed, simulating:", error);
-    return simulateVexaChat(userMessage);
+    return simulateVexaChat(userMessage, ctx);
   }
 }
 
-async function simulateVexaChat(query: string): Promise<string> {
+async function simulateVexaChat(query: string, ctx: AIContext): Promise<string> {
   const q = query.toLowerCase();
-  const metrics = await repository.getMetrics();
-  const profile = await repository.getProfile();
-  const invoices = await repository.getInvoices();
-  const products = await repository.getProducts();
+  const { metrics, profile, invoices, products } = ctx;
   const currency = profile.currency || "KSh";
 
   if (q.includes('runway') || q.includes('burn') || q.includes('cash')) {
@@ -260,7 +257,6 @@ With **${currency} ${metrics.cashReserve.toLocaleString()}** in reserves and a m
 
   if (q.includes('overdue') || q.includes('invoice') || q.includes('reminder') || q.includes('billing')) {
     const overdue = invoices.filter(i => i.status === 'overdue');
-    const pending = invoices.filter(i => i.status === 'pending');
     return `### Invoice Status
 
 | Invoice | Client | Amount | Status | Due |

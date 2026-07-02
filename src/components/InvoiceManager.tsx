@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "motion/react";
-import { FileText, Plus, CircleCheck as CheckCircle, Clock, TriangleAlert as AlertTriangle, Sparkles, Check } from "lucide-react";
+import { FileText, Plus, CircleCheck as CheckCircle, Clock, TriangleAlert as AlertTriangle, Sparkles, Check, Trash2 } from "lucide-react";
 import { apiClient } from "../lib/apiClient";
 import { Invoice, Client } from "../types";
 import PageHeader from "./ui/PageHeader";
@@ -24,6 +24,7 @@ export default function InvoiceManager() {
   const [dueDate, setDueDate] = useState("");
   const [filter, setFilter] = useState<'all' | 'paid' | 'pending' | 'overdue'>('all');
   const [submitting, setSubmitting] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState<Invoice | null>(null);
 
   useEffect(() => { loadInvoices(); }, []);
 
@@ -67,6 +68,20 @@ export default function InvoiceManager() {
         detail: `Draft a professional payment reminder email for overdue invoice ${inv.invoiceNumber} from ${inv.client} (${currency} ${inv.amount.toLocaleString()})`,
       }));
     }, 100);
+  };
+
+  const handleDelete = async () => {
+    if (!confirmDelete) return;
+    try {
+      await apiClient.deleteInvoice(confirmDelete.id);
+      setInvoices((prev) => prev.filter((i) => i.id !== confirmDelete.id));
+      show("Invoice deleted", "success");
+    } catch (err) {
+      console.error(err);
+      show("Failed to delete invoice.", "error");
+    } finally {
+      setConfirmDelete(null);
+    }
   };
 
   if (loading) return <div className="space-y-6"><div className="h-8 w-32 rounded-xl shimmer" /><div className="grid grid-cols-3 gap-4">{Array.from({ length: 3 }).map((_, i) => <div key={i} className="h-20 rounded-xl shimmer" />)}</div></div>;
@@ -153,6 +168,9 @@ export default function InvoiceManager() {
                           </>
                         )}
                         {inv.status === 'paid' && <span className="text-xs font-mono text-neutral-500">Reconciled</span>}
+                        <button onClick={() => setConfirmDelete(inv)} className="rounded-lg p-1 text-neutral-500 transition hover:bg-error-500/10 hover:text-error-400" aria-label="Delete invoice">
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -193,6 +211,17 @@ export default function InvoiceManager() {
             </button>
           </div>
         </form>
+      </Modal>
+
+      <Modal isOpen={!!confirmDelete} onClose={() => setConfirmDelete(null)} title="Delete Invoice" maxWidth="max-w-md">
+        <p className="text-sm text-neutral-300">
+          Are you sure you want to delete invoice <span className="font-semibold text-white">{confirmDelete?.invoiceNumber}</span> for <span className="font-semibold text-white">{confirmDelete?.client}</span>?
+          This action cannot be undone.
+        </p>
+        <div className="mt-6 flex justify-end gap-3">
+          <button type="button" onClick={() => setConfirmDelete(null)} className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-2.5 text-xs font-semibold text-neutral-400 hover:text-white transition">Cancel</button>
+          <button type="button" onClick={handleDelete} className="btn-press rounded-xl bg-error-600 px-5 py-2.5 text-xs font-semibold text-white hover:bg-error-500 transition">Delete</button>
+        </div>
       </Modal>
     </div>
   );

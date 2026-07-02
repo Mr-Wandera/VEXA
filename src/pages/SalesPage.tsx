@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "motion/react";
-import { ShoppingCart, Plus, TrendingUp, DollarSign, Sparkles } from "lucide-react";
+import { ShoppingCart, Plus, TrendingUp, DollarSign, Sparkles, Trash2, RotateCcw, Check } from "lucide-react";
 import { apiClient } from "../lib/apiClient";
 import { Sale, Product } from "../types";
 import StatCard from "../components/ui/StatCard";
@@ -24,6 +24,7 @@ export default function SalesPage() {
   const [customerName, setCustomerName] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<Sale["paymentMethod"]>("mpesa");
   const [submitting, setSubmitting] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState<Sale | null>(null);
   const currency = useCurrency();
 
   useEffect(() => { loadData(); }, []);
@@ -81,6 +82,31 @@ export default function SalesPage() {
       show("Failed to record sale. Please try again.", "error");
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleStatusChange = async (id: string, status: Sale["status"]) => {
+    try {
+      const updated = await apiClient.updateSaleStatus(id, status);
+      setSales((prev) => prev.map((s) => (s.id === id ? updated : s)));
+      show(`Sale marked as ${status}`, "success");
+    } catch (err) {
+      console.error(err);
+      show("Failed to update sale status.", "error");
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!confirmDelete) return;
+    try {
+      await apiClient.deleteSale(confirmDelete.id);
+      setSales((prev) => prev.filter((s) => s.id !== confirmDelete.id));
+      show("Sale deleted", "success");
+    } catch (err) {
+      console.error(err);
+      show("Failed to delete sale.", "error");
+    } finally {
+      setConfirmDelete(null);
     }
   };
 
@@ -154,6 +180,7 @@ export default function SalesPage() {
                     <th className="py-3 px-4 text-right">Total</th>
                     <th className="py-3 px-4 text-center">Payment</th>
                     <th className="py-3 px-4 text-center">Status</th>
+                    <th className="py-3 px-4 text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/[0.03]">
@@ -178,6 +205,23 @@ export default function SalesPage() {
                         }`}>
                           {sale.status}
                         </span>
+                      </td>
+                      <td className="py-3 px-4 text-right">
+                        <div className="flex items-center justify-end gap-1.5 opacity-0 group-hover:opacity-100 transition">
+                          {sale.status === "completed" && (
+                            <button onClick={() => handleStatusChange(sale.id, "refunded")} className="rounded-lg p-1 text-neutral-500 transition hover:bg-warning-500/10 hover:text-warning-400" aria-label="Mark as refunded" title="Mark as refunded">
+                              <RotateCcw className="h-3.5 w-3.5" />
+                            </button>
+                          )}
+                          {sale.status === "pending" && (
+                            <button onClick={() => handleStatusChange(sale.id, "completed")} className="rounded-lg p-1 text-neutral-500 transition hover:bg-success-500/10 hover:text-success-400" aria-label="Mark as completed" title="Mark as completed">
+                              <Check className="h-3.5 w-3.5" />
+                            </button>
+                          )}
+                          <button onClick={() => setConfirmDelete(sale)} className="rounded-lg p-1 text-neutral-500 transition hover:bg-error-500/10 hover:text-error-400" aria-label="Delete sale">
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -279,6 +323,17 @@ export default function SalesPage() {
             </button>
           </div>
         </form>
+      </Modal>
+
+      <Modal isOpen={!!confirmDelete} onClose={() => setConfirmDelete(null)} title="Delete Sale" maxWidth="max-w-md">
+        <p className="text-sm text-neutral-300">
+          Are you sure you want to delete this sale of <span className="font-semibold text-white">{confirmDelete?.productName}</span> ({currency} {confirmDelete?.totalAmount.toLocaleString()})?
+          This action cannot be undone.
+        </p>
+        <div className="mt-6 flex justify-end gap-3">
+          <button type="button" onClick={() => setConfirmDelete(null)} className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-2.5 text-xs font-semibold text-neutral-400 hover:text-white transition">Cancel</button>
+          <button type="button" onClick={handleDelete} className="btn-press rounded-xl bg-error-600 px-5 py-2.5 text-xs font-semibold text-white hover:bg-error-500 transition">Delete</button>
+        </div>
       </Modal>
     </div>
   );

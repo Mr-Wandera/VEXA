@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "motion/react";
-import { Package, Plus, TriangleAlert as AlertTriangle, DollarSign, Boxes } from "lucide-react";
+import { Package, Plus, TriangleAlert as AlertTriangle, DollarSign, Boxes, Pencil, Trash2 } from "lucide-react";
 import { apiClient } from "../lib/apiClient";
 import { Product } from "../types";
 import StatCard from "../components/ui/StatCard";
@@ -10,29 +10,25 @@ import Modal from "../components/ui/Modal";
 import PageHeader from "../components/ui/PageHeader";
 import { useCurrency } from "../lib/useCurrency";
 
+const EMPTY_FORM = {
+  name: "", sku: "", category: "", price: "", cost: "", stock: "", reorderLevel: "10", unit: "pcs",
+};
+
 export default function InventoryPage() {
   const { show } = useToast();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showAdd, setShowAdd] = useState(false);
+  const [editing, setEditing] = useState<Product | null>(null);
   const [filter, setFilter] = useState<"all" | "low" | "out">("all");
+  const [confirmDelete, setConfirmDelete] = useState<Product | null>(null);
 
-  // Form state
-  const [name, setName] = useState("");
-  const [sku, setSku] = useState("");
-  const [category, setCategory] = useState("");
-  const [price, setPrice] = useState("");
-  const [cost, setCost] = useState("");
-  const [stock, setStock] = useState("");
-  const [reorderLevel, setReorderLevel] = useState("10");
-  const [unit, setUnit] = useState("pcs");
+  const [form, setForm] = useState(EMPTY_FORM);
   const [submitting, setSubmitting] = useState(false);
   const currency = useCurrency();
 
-  useEffect(() => {
-    loadData();
-  }, []);
+  useEffect(() => { loadData(); }, []);
 
   const loadData = async () => {
     try {
@@ -47,32 +43,76 @@ export default function InventoryPage() {
     }
   };
 
-  const handleAddProduct = async (e: React.FormEvent) => {
+  const openAdd = () => {
+    setForm(EMPTY_FORM);
+    setEditing(null);
+    setShowAdd(true);
+  };
+
+  const openEdit = (product: Product) => {
+    setEditing(product);
+    setForm({
+      name: product.name,
+      sku: product.sku,
+      category: product.category,
+      price: String(product.price),
+      cost: String(product.cost),
+      stock: String(product.stock),
+      reorderLevel: String(product.reorderLevel),
+      unit: product.unit,
+    });
+    setShowAdd(true);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSubmitting(true);
-    if (!name || !sku || !price || Number(price) <= 0) {
+    if (!form.name || !form.sku || !form.price || Number(form.price) <= 0) {
       show("Please fill in all required fields with valid values.", "error");
-      setSubmitting(false);
       return;
     }
+    setSubmitting(true);
     try {
-      const product = await apiClient.addProduct({
-        name, sku, category,
-        price: Number(price),
-        cost: Number(cost),
-        stock: Number(stock),
-        reorderLevel: Number(reorderLevel),
-        unit,
-      });
-      setProducts((prev) => [product, ...prev]);
-      setName(""); setSku(""); setCategory(""); setPrice(""); setCost(""); setStock(""); setReorderLevel("10");
+      const payload = {
+        name: form.name,
+        sku: form.sku,
+        category: form.category,
+        price: Number(form.price),
+        cost: Number(form.cost || 0),
+        stock: Number(form.stock || 0),
+        reorderLevel: Number(form.reorderLevel || 10),
+        unit: form.unit,
+      };
+      if (editing) {
+        const updated = await apiClient.updateProduct(editing.id, payload);
+        setProducts((prev) => prev.map((p) => (p.id === editing.id ? updated : p)));
+        show("Product updated successfully", "success");
+      } else {
+        const product = await apiClient.addProduct(payload);
+        setProducts((prev) => [product, ...prev]);
+        show("Product created successfully", "success");
+      }
+      setForm(EMPTY_FORM);
+      setEditing(null);
       setShowAdd(false);
-      show("Product created successfully", "success");
     } catch (err) {
       console.error(err);
-      show("Failed to create. Please try again.", "error");
+      show("Failed to save. Please try again.", "error");
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!confirmDelete) return;
+    try {
+      await apiClient.deleteProduct(confirmDelete.id);
+      setProducts((prev) => prev.filter((p) => p.id !== confirmDelete.id));
+      show("Product deleted", "success");
+    } catch (err) {
+      console.error(err);
+      show("Failed to delete product.", "error");
+    } finally {
+      setConfirmDelete(null);
     }
   };
 
@@ -106,7 +146,7 @@ export default function InventoryPage() {
       <PageHeader
         title="Inventory"
         subtitle="Manage products and track stock levels."
-        action={{ label: "Add Product", icon: Plus, onClick: () => setShowAdd(true) }}
+        action={{ label: "Add Product", icon: Plus, onClick: openAdd }}
       />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -157,15 +197,32 @@ export default function InventoryPage() {
                   className="group rounded-xl border border-white/[0.06] bg-white/[0.015] p-4 transition hover:border-neutral-700"
                 >
                   <div className="flex items-start justify-between">
-                    <div>
-                      <h4 className="font-display text-sm font-semibold text-white">{product.name}</h4>
+                    <div className="min-w-0">
+                      <h4 className="font-display text-sm font-semibold text-white truncate">{product.name}</h4>
                       <p className="mt-0.5 font-mono text-[10px] text-neutral-500">{product.sku} · {product.category}</p>
                     </div>
-                    <div className={`rounded-lg px-2 py-1 text-[10px] font-semibold ${
-                      isOut ? "bg-error-500/10 text-error-400" : isLow ? "bg-warning-500/10 text-warning-400" : "bg-success-500/10 text-success-400"
-                    }`}>
-                      {isOut ? "OUT" : isLow ? "LOW" : "OK"}
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => openEdit(product)}
+                        className="rounded-lg p-1.5 text-neutral-500 opacity-0 transition hover:bg-white/[0.04] hover:text-white group-hover:opacity-100"
+                        aria-label="Edit product"
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                      </button>
+                      <button
+                        onClick={() => setConfirmDelete(product)}
+                        className="rounded-lg p-1.5 text-neutral-500 opacity-0 transition hover:bg-error-500/10 hover:text-error-400 group-hover:opacity-100"
+                        aria-label="Delete product"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
                     </div>
+                  </div>
+
+                  <div className={`mt-2 inline-flex rounded-lg px-2 py-0.5 text-[10px] font-semibold ${
+                    isOut ? "bg-error-500/10 text-error-400" : isLow ? "bg-warning-500/10 text-warning-400" : "bg-success-500/10 text-success-400"
+                  }`}>
+                    {isOut ? "OUT OF STOCK" : isLow ? "LOW STOCK" : "IN STOCK"}
                   </div>
 
                   <div className="mt-3 flex items-end justify-between">
@@ -193,48 +250,48 @@ export default function InventoryPage() {
         </div>
       </motion.div>
 
-      {/* Add Product Modal */}
-      <Modal isOpen={showAdd} onClose={() => setShowAdd(false)} title="Add New Product">
-        <form onSubmit={handleAddProduct} className="space-y-4">
+      {/* Add/Edit Product Modal */}
+      <Modal isOpen={showAdd} onClose={() => setShowAdd(false)} title={editing ? "Edit Product" : "Add New Product"}>
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-medium text-neutral-400 mb-1.5">Product Name</label>
-              <input required type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Premium Hoodie" className="w-full rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3 text-sm text-white focus:border-primary-500 focus:outline-none" />
+              <input required type="text" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="e.g. Premium Hoodie" className="w-full rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3 text-sm text-white focus:border-primary-500 focus:outline-none" />
             </div>
             <div>
               <label className="block text-xs font-medium text-neutral-400 mb-1.5">SKU</label>
-              <input required type="text" value={sku} onChange={(e) => setSku(e.target.value)} placeholder="HD-001" className="w-full rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3 text-sm text-white focus:border-primary-500 focus:outline-none font-mono" />
+              <input required type="text" value={form.sku} onChange={(e) => setForm({ ...form, sku: e.target.value })} placeholder="HD-001" className="w-full rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3 text-sm text-white focus:border-primary-500 focus:outline-none font-mono" />
             </div>
           </div>
 
           <div>
             <label className="block text-xs font-medium text-neutral-400 mb-1.5">Category</label>
-            <input required type="text" value={category} onChange={(e) => setCategory(e.target.value)} placeholder="Apparel, Services, etc." className="w-full rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3 text-sm text-white focus:border-primary-500 focus:outline-none" />
+            <input required type="text" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} placeholder="Apparel, Services, etc." className="w-full rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3 text-sm text-white focus:border-primary-500 focus:outline-none" />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-medium text-neutral-400 mb-1.5">Selling Price ({currency})</label>
-              <input required type="number" min="0" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="2500" className="w-full rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3 text-sm text-white focus:border-primary-500 focus:outline-none font-mono" />
+              <input required type="number" min="0" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} placeholder="2500" className="w-full rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3 text-sm text-white focus:border-primary-500 focus:outline-none font-mono" />
             </div>
             <div>
               <label className="block text-xs font-medium text-neutral-400 mb-1.5">Cost Price ({currency})</label>
-              <input required type="number" min="0" value={cost} onChange={(e) => setCost(e.target.value)} placeholder="1200" className="w-full rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3 text-sm text-white focus:border-primary-500 focus:outline-none font-mono" />
+              <input required type="number" min="0" value={form.cost} onChange={(e) => setForm({ ...form, cost: e.target.value })} placeholder="1200" className="w-full rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3 text-sm text-white focus:border-primary-500 focus:outline-none font-mono" />
             </div>
           </div>
 
           <div className="grid grid-cols-3 gap-4">
             <div>
               <label className="block text-xs font-medium text-neutral-400 mb-1.5">Stock</label>
-              <input required type="number" min="0" value={stock} onChange={(e) => setStock(e.target.value)} placeholder="45" className="w-full rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3 text-sm text-white focus:border-primary-500 focus:outline-none font-mono" />
+              <input required type="number" min="0" value={form.stock} onChange={(e) => setForm({ ...form, stock: e.target.value })} placeholder="45" className="w-full rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3 text-sm text-white focus:border-primary-500 focus:outline-none font-mono" />
             </div>
             <div>
               <label className="block text-xs font-medium text-neutral-400 mb-1.5">Reorder At</label>
-              <input required type="number" min="0" value={reorderLevel} onChange={(e) => setReorderLevel(e.target.value)} placeholder="15" className="w-full rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3 text-sm text-white focus:border-primary-500 focus:outline-none font-mono" />
+              <input required type="number" min="0" value={form.reorderLevel} onChange={(e) => setForm({ ...form, reorderLevel: e.target.value })} placeholder="15" className="w-full rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3 text-sm text-white focus:border-primary-500 focus:outline-none font-mono" />
             </div>
             <div>
               <label className="block text-xs font-medium text-neutral-400 mb-1.5">Unit</label>
-              <select value={unit} onChange={(e) => setUnit(e.target.value)} className="w-full rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3 text-sm text-white focus:border-primary-500 focus:outline-none">
+              <select value={form.unit} onChange={(e) => setForm({ ...form, unit: e.target.value })} className="w-full rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3 text-sm text-white focus:border-primary-500 focus:outline-none">
                 <option value="pcs">pcs</option>
                 <option value="kg">kg</option>
                 <option value="hr">hr</option>
@@ -247,10 +304,24 @@ export default function InventoryPage() {
           <div className="flex justify-end gap-3 border-t border-white/[0.06] pt-5">
             <button type="button" onClick={() => setShowAdd(false)} className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-2.5 text-xs font-semibold text-neutral-400 hover:text-white transition">Cancel</button>
             <button type="submit" disabled={submitting} className="btn-press rounded-xl bg-primary-600 px-5 py-2.5 text-xs font-semibold text-white hover:bg-primary-500 transition disabled:opacity-50">
-              {submitting ? "Adding..." : "Add Product"}
+              {submitting ? "Saving..." : editing ? "Save Changes" : "Add Product"}
             </button>
           </div>
         </form>
+      </Modal>
+
+      {/* Delete confirmation */}
+      <Modal isOpen={!!confirmDelete} onClose={() => setConfirmDelete(null)} title="Delete Product" maxWidth="max-w-md">
+        <p className="text-sm text-neutral-300">
+          Are you sure you want to delete <span className="font-semibold text-white">{confirmDelete?.name}</span>?
+          This action cannot be undone.
+        </p>
+        <div className="mt-6 flex justify-end gap-3">
+          <button type="button" onClick={() => setConfirmDelete(null)} className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-2.5 text-xs font-semibold text-neutral-400 hover:text-white transition">Cancel</button>
+          <button type="button" onClick={handleDelete} className="btn-press rounded-xl bg-error-600 px-5 py-2.5 text-xs font-semibold text-white hover:bg-error-500 transition">
+            Delete
+          </button>
+        </div>
       </Modal>
     </div>
   );

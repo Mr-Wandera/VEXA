@@ -1,7 +1,9 @@
 import { motion, AnimatePresence } from "motion/react";
 import { useState } from "react";
-import { LayoutDashboard, ShoppingCart, Package, Receipt, Users, Truck, Handshake, ChartBar as BarChart3, Bell, Clock, Settings, Sparkles, FileText, X, ChevronLeft } from "lucide-react";
+import { LayoutDashboard, ShoppingCart, Package, Receipt, Users, Truck, Handshake, ChartBar as BarChart3, Bell, Clock, Settings, Sparkles, FileText, X, ChevronLeft, LogOut } from "lucide-react";
 import { useRouter } from "../lib/router";
+import { useAuth } from "../lib/auth";
+import { useToast } from "./ui/Toast";
 
 interface SidebarProps {
   open: boolean;
@@ -47,6 +49,8 @@ const NAV_SECTIONS = [
 
 export default function Sidebar({ open, onClose, notificationCount, onCollapseChange }: SidebarProps) {
   const { path, navigate } = useRouter();
+  const { user, signOut } = useAuth();
+  const { show } = useToast();
   const [collapsed, setCollapsed] = useState(() => {
     if (typeof window !== 'undefined') return localStorage.getItem("vexa-sidebar-collapsed") === "true";
     return false;
@@ -63,6 +67,20 @@ export default function Sidebar({ open, onClose, notificationCount, onCollapseCh
     navigate(to);
     onClose();
   };
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      show("Signed out successfully", "info");
+      navigate("/");
+    } catch (err) {
+      console.error(err);
+      show("Failed to sign out. Please try again.", "error");
+    }
+  };
+
+  const userEmail = user?.email ?? "";
+  const userInitial = userEmail.charAt(0).toUpperCase() || "U";
 
   const sidebarWidth = collapsed ? "w-[72px]" : "w-64";
 
@@ -175,6 +193,27 @@ export default function Sidebar({ open, onClose, notificationCount, onCollapseCh
                 </div>
               )}
             </button>
+          </div>
+
+          {/* User profile + sign out */}
+          <div className="border-t border-white/[0.04] p-3">
+            <div className={`flex items-center gap-3 rounded-xl px-2 py-2 ${collapsed ? "justify-center" : ""}`}>
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-tr from-primary-500/20 to-secondary-500/20 text-xs font-bold text-primary-300">
+                {userInitial}
+              </div>
+              {!collapsed && (
+                <div className="flex-1 min-w-0">
+                  <p className="truncate text-xs font-medium text-white">{userEmail}</p>
+                </div>
+              )}
+              <button
+                onClick={handleSignOut}
+                title="Sign out"
+                className={`rounded-lg p-1.5 text-neutral-500 transition hover:bg-white/[0.04] hover:text-error-400 ${collapsed ? "mx-auto" : ""}`}
+              >
+                <LogOut className="h-4 w-4" />
+              </button>
+            </div>
           </div>
 
           {/* Collapse toggle */}

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "motion/react";
-import { Users, Plus, Mail, Phone, DollarSign, UserPlus } from "lucide-react";
+import { Users, Plus, Mail, Phone, DollarSign, UserPlus, Pencil, Trash2 } from "lucide-react";
 import { apiClient } from "../lib/apiClient";
 import { Client } from "../types";
 import StatCard from "../components/ui/StatCard";
@@ -10,15 +10,17 @@ import Modal from "../components/ui/Modal";
 import PageHeader from "../components/ui/PageHeader";
 import { useCurrency } from "../lib/useCurrency";
 
+const EMPTY_FORM = { name: "", email: "", phone: "", status: "active" as "active" | "inactive" };
+
 export default function CustomersPage() {
   const { show } = useToast();
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showAdd, setShowAdd] = useState(false);
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
+  const [editing, setEditing] = useState<Client | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<Client | null>(null);
+  const [form, setForm] = useState(EMPTY_FORM);
   const [submitting, setSubmitting] = useState(false);
   const currency = useCurrency();
 
@@ -35,20 +37,53 @@ export default function CustomersPage() {
     finally { setLoading(false); }
   };
 
-  const handleAdd = async (e: React.FormEvent) => {
+  const openAdd = () => {
+    setForm(EMPTY_FORM);
+    setEditing(null);
+    setShowAdd(true);
+  };
+
+  const openEdit = (client: Client) => {
+    setEditing(client);
+    setForm({ name: client.name, email: client.email, phone: client.phone ?? "", status: client.status });
+    setShowAdd(true);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
     try {
-      const c = await apiClient.addClient({ name, email, phone });
-      setClients((prev) => [c, ...prev]);
-      setName(""); setEmail(""); setPhone("");
+      if (editing) {
+        const updated = await apiClient.updateClient(editing.id, form);
+        setClients((prev) => prev.map((c) => (c.id === editing.id ? updated : c)));
+        show("Customer updated successfully", "success");
+      } else {
+        const c = await apiClient.addClient(form);
+        setClients((prev) => [c, ...prev]);
+        show("Customer created successfully", "success");
+      }
+      setForm(EMPTY_FORM);
+      setEditing(null);
       setShowAdd(false);
-      show("Customer created successfully", "success");
     } catch (err) {
       console.error(err);
-      show("Failed to create. Please try again.", "error");
+      show("Failed to save. Please try again.", "error");
     }
     finally { setSubmitting(false); }
+  };
+
+  const handleDelete = async () => {
+    if (!confirmDelete) return;
+    try {
+      await apiClient.deleteClient(confirmDelete.id);
+      setClients((prev) => prev.filter((c) => c.id !== confirmDelete.id));
+      show("Customer deleted", "success");
+    } catch (err) {
+      console.error(err);
+      show("Failed to delete customer.", "error");
+    } finally {
+      setConfirmDelete(null);
+    }
   };
 
   const totalOutstanding = clients.reduce((sum, c) => sum + c.outstandingBalance, 0);
@@ -68,7 +103,7 @@ export default function CustomersPage() {
       <PageHeader
         title="Customers"
         subtitle="Manage your customer relationships."
-        action={{ label: "Add Customer", icon: Plus, onClick: () => setShowAdd(true) }}
+        action={{ label: "Add Customer", icon: Plus, onClick: openAdd }}
       />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -81,7 +116,7 @@ export default function CustomersPage() {
         <div className="flex flex-col items-center justify-center py-20 text-center">
           <div className="mb-3 rounded-2xl bg-white/[0.02] p-4"><Users className="h-8 w-8 text-neutral-600" /></div>
           <p className="text-sm text-neutral-400">No customers yet.</p>
-          <button onClick={() => setShowAdd(true)} className="mt-3 text-sm font-medium text-primary-400 hover:text-primary-300 transition">Add your first customer →</button>
+          <button onClick={openAdd} className="mt-3 text-sm font-medium text-primary-400 hover:text-primary-300 transition">Add your first customer →</button>
         </div>
       ) : (
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -103,9 +138,25 @@ export default function CustomersPage() {
                   <p className="text-xs text-neutral-500">{client.status === "active" ? "Active customer" : "Inactive"}</p>
                 </div>
               </div>
-              <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase ${client.status === "active" ? "bg-success-500/10 text-success-400" : "bg-neutral-700 text-neutral-400"}`}>
-                {client.status}
-              </span>
+              <div className="flex items-center gap-1">
+                <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase ${client.status === "active" ? "bg-success-500/10 text-success-400" : "bg-neutral-700 text-neutral-400"}`}>
+                  {client.status}
+                </span>
+                <button
+                  onClick={() => openEdit(client)}
+                  className="rounded-lg p-1 text-neutral-500 opacity-0 transition hover:bg-white/[0.04] hover:text-white group-hover:opacity-100"
+                  aria-label="Edit customer"
+                >
+                  <Pencil className="h-3.5 w-3.5" />
+                </button>
+                <button
+                  onClick={() => setConfirmDelete(client)}
+                  className="rounded-lg p-1 text-neutral-500 opacity-0 transition hover:bg-error-500/10 hover:text-error-400 group-hover:opacity-100"
+                  aria-label="Delete customer"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </button>
+              </div>
             </div>
 
             <div className="mt-4 space-y-1.5 text-xs">
@@ -130,25 +181,43 @@ export default function CustomersPage() {
       </div>
       )}
 
-      <Modal isOpen={showAdd} onClose={() => setShowAdd(false)} title="Add New Customer">
-        <form onSubmit={handleAdd} className="space-y-4">
+      <Modal isOpen={showAdd} onClose={() => setShowAdd(false)} title={editing ? "Edit Customer" : "Add New Customer"}>
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-xs font-medium text-neutral-400 mb-1.5">Full Name</label>
-            <input required type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Brian Kamau" className="w-full rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3 text-sm text-white focus:border-primary-500 focus:outline-none" />
+            <input required type="text" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Brian Kamau" className="w-full rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3 text-sm text-white focus:border-primary-500 focus:outline-none" />
           </div>
           <div>
             <label className="block text-xs font-medium text-neutral-400 mb-1.5">Email</label>
-            <input required type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="brian@example.com" className="w-full rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3 text-sm text-white focus:border-primary-500 focus:outline-none" />
+            <input required type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="brian@example.com" className="w-full rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3 text-sm text-white focus:border-primary-500 focus:outline-none" />
           </div>
           <div>
             <label className="block text-xs font-medium text-neutral-400 mb-1.5">Phone (optional)</label>
-            <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+254 700 000 000" className="w-full rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3 text-sm text-white focus:border-primary-500 focus:outline-none" />
+            <input type="tel" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="+254 700 000 000" className="w-full rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3 text-sm text-white focus:border-primary-500 focus:outline-none" />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-neutral-400 mb-1.5">Status</label>
+            <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value as "active" | "inactive" })} className="w-full rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3 text-sm text-white focus:border-primary-500 focus:outline-none">
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+            </select>
           </div>
           <div className="flex justify-end gap-3 border-t border-white/[0.06] pt-5">
             <button type="button" onClick={() => setShowAdd(false)} className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-2.5 text-xs font-semibold text-neutral-400 hover:text-white transition">Cancel</button>
-            <button type="submit" disabled={submitting} className="btn-press rounded-xl bg-primary-600 px-5 py-2.5 text-xs font-semibold text-white hover:bg-primary-500 transition disabled:opacity-50">{submitting ? "Adding..." : "Add Customer"}</button>
+            <button type="submit" disabled={submitting} className="btn-press rounded-xl bg-primary-600 px-5 py-2.5 text-xs font-semibold text-white hover:bg-primary-500 transition disabled:opacity-50">{submitting ? "Saving..." : editing ? "Save Changes" : "Add Customer"}</button>
           </div>
         </form>
+      </Modal>
+
+      <Modal isOpen={!!confirmDelete} onClose={() => setConfirmDelete(null)} title="Delete Customer" maxWidth="max-w-md">
+        <p className="text-sm text-neutral-300">
+          Are you sure you want to delete <span className="font-semibold text-white">{confirmDelete?.name}</span>?
+          This action cannot be undone.
+        </p>
+        <div className="mt-6 flex justify-end gap-3">
+          <button type="button" onClick={() => setConfirmDelete(null)} className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-2.5 text-xs font-semibold text-neutral-400 hover:text-white transition">Cancel</button>
+          <button type="button" onClick={handleDelete} className="btn-press rounded-xl bg-error-600 px-5 py-2.5 text-xs font-semibold text-white hover:bg-error-500 transition">Delete</button>
+        </div>
       </Modal>
     </div>
   );

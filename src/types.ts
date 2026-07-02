@@ -1,9 +1,6 @@
 // ============================================================================
 // VEXA — Domain Models
 // Central type definitions for the entire application.
-// Designed to be backend-agnostic: these interfaces represent the API contract
-// between frontend and backend, regardless of whether the backend is the
-// current in-memory MockStore or a future Go/PostgreSQL implementation.
 // ============================================================================
 
 // --- Core Financial Entities -----------------------------------------------
@@ -183,55 +180,3 @@ export interface DashboardMetrics {
   outstandingInvoices: number;
 }
 
-// --- Auth -------------------------------------------------------------------
-
-export interface AuthUser {
-  id: string;
-  email: string;
-  name: string;
-  businessId?: string;
-}
-
-// --- Repository Contract ----------------------------------------------------
-// This interface defines the data access contract. The current implementation
-// uses an in-memory store; a future implementation can swap in Supabase or a
-// Go REST backend without changing any frontend code that depends on this.
-
-export interface DataRepository {
-  // Metrics
-  getMetrics(): Promise<DashboardMetrics>;
-  // Transactions
-  getTransactions(): Promise<Transaction[]>;
-  addTransaction(tx: Omit<Transaction, 'id' | 'aiAnalysis'>): Promise<Transaction>;
-  // Invoices
-  getInvoices(): Promise<Invoice[]>;
-  addInvoice(inv: Omit<Invoice, 'id'>): Promise<Invoice>;
-  updateInvoiceStatus(id: string, status: Invoice['status']): Promise<Invoice>;
-  // Clients / Customers
-  getClients(): Promise<Client[]>;
-  addClient(c: Omit<Client, 'id' | 'totalInvoiced' | 'outstandingBalance' | 'joinedDate'>): Promise<Client>;
-  // Products / Inventory
-  getProducts(): Promise<Product[]>;
-  addProduct(p: Omit<Product, 'id' | 'createdAt'>): Promise<Product>;
-  updateProduct(id: string, updates: Partial<Product>): Promise<Product>;
-  // Sales
-  getSales(): Promise<Sale[]>;
-  addSale(sale: Omit<Sale, 'id'>): Promise<Sale>;
-  // Expenses
-  getExpenses(): Promise<Expense[]>;
-  addExpense(exp: Omit<Expense, 'id'>): Promise<Expense>;
-  // Suppliers
-  getSuppliers(): Promise<Supplier[]>;
-  addSupplier(s: Omit<Supplier, 'id' | 'totalPurchased' | 'outstandingPayable' | 'joinedDate'>): Promise<Supplier>;
-  // Partners
-  getPartners(): Promise<Partner[]>;
-  addPartner(p: Omit<Partner, 'id' | 'joinedDate'>): Promise<Partner>;
-  // Notifications
-  getNotifications(): Promise<Notification[]>;
-  markNotificationRead(id: string): Promise<void>;
-  // Timeline
-  getTimeline(): Promise<TimelineEvent[]>;
-  // Profile
-  getProfile(): Promise<BusinessProfile>;
-  updateProfile(profile: Partial<BusinessProfile>): Promise<BusinessProfile>;
-}

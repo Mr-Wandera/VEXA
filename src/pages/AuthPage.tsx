@@ -3,14 +3,14 @@ import { motion, AnimatePresence } from "motion/react";
 import { Sparkles, Mail, Lock, User, ArrowRight, ArrowLeft, Check, Eye, EyeOff } from "lucide-react";
 import { useRouter } from "../lib/router";
 import { useToast } from "../components/ui/Toast";
+import { useAuth } from "../lib/auth";
+import { seedNewAccount } from "../lib/seed";
+import { supabase } from "../lib/supabase";
 
-interface AuthPageProps {
-  onAuthed: () => void;
-}
-
-export default function AuthPage({ onAuthed }: AuthPageProps) {
+export default function AuthPage() {
   const { navigate } = useRouter();
   const { show } = useToast();
+  const { signIn, signUp } = useAuth();
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -41,20 +41,48 @@ export default function AuthPage({ onAuthed }: AuthPageProps) {
     }
 
     setLoading(true);
-    await new Promise((r) => setTimeout(r, 600));
-
-    sessionStorage.setItem("vexa_auth", "true");
-    sessionStorage.setItem("vexa_user", JSON.stringify({ email, name: name || email.split("@")[0] }));
-    setLoading(false);
-    onAuthed();
-    show(mode === "signin" ? "Welcome back!" : "Account created successfully!", "success");
-    navigate("/app/dashboard");
+    try {
+      if (mode === "signin") {
+        const { error: signInError } = await signIn(email, password);
+        if (signInError) {
+          setError(signInError.includes("Invalid login credentials")
+            ? "Invalid email or password. Please try again."
+            : signInError);
+          setLoading(false);
+          return;
+        }
+        show("Welcome back!", "success");
+      } else {
+        const { error: signUpError } = await signUp(email, password, name.trim());
+        if (signUpError) {
+          setError(signUpError.includes("already registered")
+            ? "An account with this email already exists. Please sign in."
+            : signUpError);
+          setLoading(false);
+          return;
+        }
+        // Seed the new account with demo data
+        await seedNewAccountForEmail(email);
+        show("Account created successfully!", "success");
+      }
+      navigate("/app/dashboard");
+    } catch (err) {
+      console.error(err);
+      setError("Something went wrong. Please try again.");
+      setLoading(false);
+    }
   };
 
-  const handleSkip = () => {
-    sessionStorage.setItem("vexa_auth", "true");
-    onAuthed();
-    navigate("/app/dashboard");
+  // Helper: seed after signup. We need the user id, which we get from the session.
+  const seedNewAccountForEmail = async (_email: string) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await seedNewAccount(user.id);
+      }
+    } catch (err) {
+      console.error("Failed to seed account:", err);
+    }
   };
 
   return (
@@ -223,15 +251,6 @@ export default function AuthPage({ onAuthed }: AuthPageProps) {
               {mode === "signin" ? "Sign up" : "Sign in"}
             </button>
           </p>
-
-          <div className="mt-6 text-center">
-            <button
-              onClick={handleSkip}
-              className="text-xs text-neutral-500 hover:text-neutral-300 transition"
-            >
-              Skip and explore the demo →
-            </button>
-          </div>
         </div>
       </div>
     </div>

@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
 import { motion } from "motion/react";
-import { Bell, CircleAlert as AlertCircle, CircleCheck as CheckCircle, Info, Sparkles, Check } from "lucide-react";
+import { Bell, CircleAlert as AlertCircle, CircleCheck as CheckCircle, Info, Sparkles, Check, Trash2 } from "lucide-react";
 import { apiClient } from "../lib/apiClient";
 import { Notification } from "../types";
 import ErrorState from "../components/ui/ErrorState";
+import Modal from "../components/ui/Modal";
 import PageHeader from "../components/ui/PageHeader";
 import { useToast } from "../components/ui/Toast";
 import { useRouter } from "../lib/router";
@@ -22,6 +23,7 @@ export default function NotificationsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [filter, setFilter] = useState<"all" | "unread">("all");
+  const [confirmDelete, setConfirmDelete] = useState<Notification | null>(null);
 
   useEffect(() => { loadData(); }, []);
 
@@ -43,12 +45,28 @@ export default function NotificationsPage() {
   };
 
   const handleMarkAllRead = async () => {
-    const unread = notifications.filter((n) => !n.read);
-    await Promise.all(
-      unread.map((n) => apiClient.markNotificationRead(n.id).catch((err) => console.error(err)))
-    );
-    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
-    show("All notifications marked as read", "success");
+    try {
+      await apiClient.markAllNotificationsRead();
+      setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+      show("All notifications marked as read", "success");
+    } catch (err) {
+      console.error(err);
+      show("Failed to mark all as read.", "error");
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!confirmDelete) return;
+    try {
+      await apiClient.deleteNotification(confirmDelete.id);
+      setNotifications((prev) => prev.filter((n) => n.id !== confirmDelete.id));
+      show("Notification deleted", "success");
+    } catch (err) {
+      console.error(err);
+      show("Failed to delete notification.", "error");
+    } finally {
+      setConfirmDelete(null);
+    }
   };
 
   const handleActionClick = (notif: Notification) => {
@@ -150,20 +168,40 @@ export default function NotificationsPage() {
                     </button>
                   )}
                 </div>
-                {!notif.read && (
+                <div className="flex items-center gap-1">
+                  {!notif.read && (
+                    <button
+                      onClick={() => handleMarkRead(notif.id)}
+                      aria-label="Mark as read"
+                      className="rounded-lg p-2 text-neutral-500 transition hover:text-white md:opacity-0 md:group-hover:opacity-100"
+                    >
+                      <Check className="h-4 w-4" />
+                    </button>
+                  )}
                   <button
-                    onClick={() => handleMarkRead(notif.id)}
-                    aria-label="Mark as read"
-                    className="rounded-lg p-2 text-neutral-500 transition hover:text-white md:opacity-0 md:group-hover:opacity-100"
+                    onClick={() => setConfirmDelete(notif)}
+                    aria-label="Delete notification"
+                    className="rounded-lg p-2 text-neutral-500 transition hover:text-error-400 md:opacity-0 md:group-hover:opacity-100"
                   >
-                    <Check className="h-4 w-4" />
+                    <Trash2 className="h-4 w-4" />
                   </button>
-                )}
+                </div>
               </motion.div>
             );
           })
         )}
       </div>
+
+      <Modal isOpen={!!confirmDelete} onClose={() => setConfirmDelete(null)} title="Delete Notification" maxWidth="max-w-md">
+        <p className="text-sm text-neutral-300">
+          Are you sure you want to delete this notification?
+          This action cannot be undone.
+        </p>
+        <div className="mt-6 flex justify-end gap-3">
+          <button type="button" onClick={() => setConfirmDelete(null)} className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-2.5 text-xs font-semibold text-neutral-400 hover:text-white transition">Cancel</button>
+          <button type="button" onClick={handleDelete} className="btn-press rounded-xl bg-error-600 px-5 py-2.5 text-xs font-semibold text-white hover:bg-error-500 transition">Delete</button>
+        </div>
+      </Modal>
     </div>
   );
 }
